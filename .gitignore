@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.output/
+.nuxt/
+target/
+artifacts/
+*.duckdb
+*.duckdb.wal
+.DS_Store
+Thumbs.db

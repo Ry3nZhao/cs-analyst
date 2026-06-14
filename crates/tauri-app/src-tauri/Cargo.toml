@@ -1,0 +1,33 @@
+[package]
+name = "cs-demo-analyst"
+version = "0.1.0"
+description = "CS Demo Analyst"
+authors = ["Ryen"]
+edition = "2021"
+
+[lib]
+name = "cs_demo_analyst_lib"
+crate-type = ["lib", "cdylib", "staticlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-shell = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+duckdb = { version = "1.2", features = ["bundled"] }
+uuid = { version = "1", features = ["v4"] }
+chrono = { version = "0.4", features = ["serde"] }
+thiserror = "2"
+parking_lot = "0.12"
+tokio = { version = "1", features = ["full"] }
+dirs = "6"
+open = "5"
+
+[profile.release]
+panic = "abort"
+codegen-units = 1
+lto = true
+strip = true

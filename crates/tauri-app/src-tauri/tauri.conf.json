@@ -1,0 +1,55 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "CS Demo Analyst",
+  "version": "0.1.0",
+  "identifier": "com.cs-demo-analyst.app",
+  "build": {
+    "beforeDevCommand": "pnpm --filter @cs-demo-analyst/desktop dev",
+    "beforeBuildCommand": "pnpm --filter @cs-demo-analyst/desktop generate",
+    "devUrl": "http://localhost:3000",
+    "frontendDist": "../../../apps/desktop/.output/public"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "CS Demo Analyst",
+        "width": 1280,
+        "height": 800,
+        "resizable": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis", "dmg", "appimage", "deb", "rpm"],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "resources": ["resources/sidecar/**"],
+    "windows": {
+      "signAndEditExecutable": false
+    },
+    "macOS": {
+      "signingIdentity": "-"
+    }
+  },
+  "plugins": {
+    "shell": {
+      "sidecar": true,
+      "scope": [
+        {
+          "name": "sidecar/node",
+          "sidecar": true,
+          "args": true
+        }
+      ]
+    }
+  }
+}

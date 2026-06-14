@@ -1,0 +1,9 @@
+:root {
+  color-scheme: dark;
+}
+
+html, body, #__nuxt {
+  min-height: 100vh;
+  background: #1a1d24;
+  color: #e5e7eb;
+}
