@@ -1,11 +1,13 @@
 name: Release
 
 on:
+  workflow_run:
+    workflows: [Validate]
+    types: [completed]
+    branches: [master]
   push:
-    branches:
-      - master
     tags:
-      - 'v1.0.0'
+      - 'v*'
   workflow_dispatch:
     inputs:
       release-type:
@@ -26,29 +28,57 @@ on:
 permissions:
   contents: write
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 concurrency:
-  group: release-${{ github.workflow }}-${{ github.ref }}
+  group: release-${{ github.workflow }}-${{ github.event.workflow_run.head_branch || github.ref }}
   cancel-in-progress: false
 
 jobs:
+  gate:
+    name: Check trigger
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) ||
+      (github.event_name == 'workflow_run' &&
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.event == 'push')
+    steps:
+      - run: echo "Release pipeline allowed"
+
   prepare:
     name: Prepare version
+    needs: gate
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
       bumped: ${{ steps.bump.outputs.bumped }}
+      checkout_ref: ${{ steps.checkout_ref.outputs.ref }}
     steps:
+      - name: Resolve checkout ref
+        id: checkout_ref
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            echo "ref=${{ github.event.workflow_run.head_sha }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "ref=${{ github.ref }}" >> "$GITHUB_OUTPUT"
+          fi
+        shell: bash
+
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
+          ref: ${{ steps.checkout_ref.outputs.ref }}
           fetch-depth: 0
           fetch-tags: true
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version-file: .node-version
           cache: pnpm
@@ -105,9 +135,9 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
-          ref: ${{ github.event_name == 'workflow_dispatch' && needs.prepare.outputs.bumped == 'true' && 'master' || github.ref }}
+          ref: ${{ github.event_name == 'workflow_dispatch' && needs.prepare.outputs.bumped == 'true' && 'master' || needs.prepare.outputs.checkout_ref }}
 
       - name: Install Linux dependencies
         if: matrix.platform == 'linux'
@@ -118,27 +148,30 @@ jobs:
             libssl-dev libgtk-3-dev rpm build-essential python3
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version-file: .node-version
           cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Bundle sidecar resources
+        run: pnpm build:sidecar
+
+      - name: Sync Tauri version
+        run: node scripts/sync-version.mjs
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
 
       - name: Rust cache
-        uses: swatinem/rust-cache@v2
+        uses: swatinem/rust-cache@v2.9.1
         with:
           workspaces: crates/tauri-app/src-tauri
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Sync Tauri version
-        run: node scripts/sync-version.mjs
 
       - name: Build application
         run: pnpm run package
@@ -147,7 +180,7 @@ jobs:
         run: node scripts/collect-bundle.mjs ${{ matrix.platform }}
 
       - name: Upload workflow artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ matrix.artifact_name }}
           path: artifacts/*
@@ -163,24 +196,24 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: master
 
       - name: Download Windows artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: windows-nsis-x64
           path: dist/windows
 
       - name: Download macOS artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: macos-dmg
           path: dist/macos
 
       - name: Download Linux artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: linux-packages
           path: dist/linux

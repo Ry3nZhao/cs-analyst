@@ -4,11 +4,21 @@
 
 ## 环境要求
 
-- Node.js 20+
+- Node.js **24.16.0**（见根目录 `.node-version`）
 - pnpm 9+
 - Rust（stable）
 - **Windows**：Visual Studio Build Tools（含 C++），Tauri 打包必需
 - **Linux**：`libwebkit2gtk` 等 Tauri 系统依赖（CI 已列出完整列表）
+
+### 安装 Node 24.16
+
+任选其一，版本需与 `.node-version` 一致：
+
+- [Node.js 官方安装包](https://nodejs.org/)（选 24.16.x LTS）
+- [fnm](https://github.com/Schniz/fnm)：`fnm install 24.16.0 && fnm use 24.16.0`
+- [nvm-windows](https://github.com/coreybutler/nvm-windows)：`nvm install 24.16.0 && nvm use 24.16.0`
+
+验证：`node -v` 应输出 `v24.16.x`。
 
 ## 安装依赖
 
