@@ -1,7 +1,5 @@
 use crate::db::models::{AppSettings, AppStatus, PlatformSettings, SubAccount, User};
 use crate::db::repo;
-use crate::orchestrator::DownloadOrchestrator;
-use crate::sidecar::SidecarManager;
 use crate::AppState;
 use std::path::{Path, PathBuf};
 use serde_json::Value;

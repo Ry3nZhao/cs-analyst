@@ -472,7 +472,10 @@ pub fn update_job_status(
     Ok(())
 }
 
-pub fn fetch_queued_jobs(db: &Database, limit: i32) -> Result<Vec<(String, String, String, String, String, Option<String>, Option<String>, Option<String>)>> {
+pub fn fetch_queued_jobs(
+    db: &Database,
+    limit: i32,
+) -> Result<Vec<(String, String, String, Option<String>, String, Option<String>, Option<String>, String)>> {
     let mut stmt = db.conn.prepare(
         "SELECT j.id, dm.platform, dm.match_id, dm.demo_url, sa.external_id, dm.share_code, dm.valve_channel, sa.id
          FROM download_jobs j

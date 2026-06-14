@@ -106,6 +106,9 @@ jobs:
       - name: Generate frontend
         run: pnpm --filter @cs-demo-analyst/desktop generate
 
+      - name: Generate app icons
+        run: pnpm generate-icons
+
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
 
