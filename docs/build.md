@@ -20,7 +20,7 @@ cargo tauri build
 
 ## 各平台产物
 
-`tauri.conf.json` 已设置 `signAndEditExecutable: false`（Windows）；macOS 使用 `signingIdentity: "-"`（无签名）。
+`tauri.conf.json` 未配置 Windows 代码签名（不设置 `signCommand` / `certificateThumbprint` 即跳过签名）；macOS 使用 `signingIdentity: "-"`（无签名）。
 
 | 平台 | 默认产物 |
 |------|----------|

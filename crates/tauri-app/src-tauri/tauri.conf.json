@@ -33,9 +33,6 @@
       "icons/icon.ico"
     ],
     "resources": ["resources/sidecar/**"],
-    "windows": {
-      "signAndEditExecutable": false
-    },
     "macOS": {
       "signingIdentity": "-"
     }

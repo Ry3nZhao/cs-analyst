@@ -2,7 +2,7 @@
 
 CREATE TABLE IF NOT EXISTS app_settings (
   id INTEGER PRIMARY KEY CHECK (id = 1),
-  data_root VARCHAR NOT NULL DEFAULT 'C:\CS-Analyst\Data',
+  data_root VARCHAR NOT NULL DEFAULT './',
   global_max_concurrent INTEGER NOT NULL DEFAULT 3,
   auto_discover_on_startup BOOLEAN NOT NULL DEFAULT TRUE,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
