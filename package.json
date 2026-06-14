@@ -4,12 +4,19 @@
   "version": "0.1.0",
   "scripts": {
     "dev": "node ./scripts/dev.mjs",
+    "validate": "node ./scripts/validate/index.mjs",
+    "validate:typescript": "node ./scripts/validate/typescript.mjs",
+    "validate:frontend": "node ./scripts/validate/frontend.mjs",
+    "validate:rust": "node ./scripts/validate/rust.mjs",
+    "release": "node ./scripts/release/index.mjs",
+    "release:package": "node ./scripts/release/package.mjs",
+    "release:collect": "node ./scripts/release/collect.mjs",
     "build": "pnpm --filter @cs-demo-analyst/shared-types build && pnpm --filter @cs-demo-analyst/sidecar build && pnpm --filter @cs-demo-analyst/desktop generate",
-    "build:sidecar": "node ./scripts/bundle-sidecar.mjs",
-    "sync-version": "node ./scripts/sync-version.mjs",
-    "generate-icons": "node ./scripts/generate-icons.mjs",
-    "package": "pnpm generate-icons && pnpm build && pnpm build:sidecar && pnpm sync-version && pnpm --filter @cs-demo-analyst/tauri-app tauri build",
-    "collect-bundle": "node ./scripts/collect-bundle.mjs"
+    "build:sidecar": "node ./scripts/common/bundle-sidecar.mjs",
+    "sync-version": "node ./scripts/common/sync-version.mjs",
+    "generate-icons": "node ./scripts/common/generate-icons.mjs",
+    "package": "node ./scripts/release/package.mjs",
+    "collect-bundle": "node ./scripts/release/collect.mjs"
   },
   "packageManager": "pnpm@9.15.9",
   "engines": {

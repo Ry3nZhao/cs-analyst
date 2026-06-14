@@ -1,18 +1,26 @@
 #!/usr/bin/env node
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { buildReleaseDir, ensureDir, root } from '../lib/paths.mjs';
+import { writeStamp } from '../lib/run.mjs';
 
-const platform = process.argv[2];
-if (!['windows', 'macos', 'linux'].includes(platform)) {
-  console.error('Usage: collect-bundle.mjs <windows|macos|linux>');
-  process.exit(1);
+function detectPlatform(arg) {
+  if (arg) return arg;
+  if (process.platform === 'win32') return 'windows';
+  if (process.platform === 'darwin') return 'macos';
+  return 'linux';
 }
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const arg = process.argv[2];
+const platform = ['windows', 'macos', 'linux'].includes(arg) ? arg : detectPlatform();
+
 const bundleRoot = path.join(root, 'crates', 'tauri-app', 'src-tauri', 'target', 'release', 'bundle');
 const version = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).version;
-const artifactsDir = path.join(root, 'artifacts');
+const artifactsDir = process.env.BUILD_RELEASE_DIR
+  ? path.resolve(process.env.BUILD_RELEASE_DIR)
+  : buildReleaseDir;
+
+ensureDir(artifactsDir);
 
 function walk(dir) {
   if (!fs.existsSync(dir)) return [];
@@ -25,22 +33,23 @@ function walk(dir) {
   return out;
 }
 
-function archLabel(platform) {
-  if (platform === 'macos') {
+function archLabel(targetPlatform) {
+  if (targetPlatform === 'macos') {
     return process.arch === 'arm64' ? 'aarch64' : 'x64';
   }
   return 'x64';
 }
 
-function collectOne(source, platform, suffix = '') {
+const collected = [];
+
+function collectOne(source, targetPlatform, suffix = '') {
   const ext = path.extname(source);
-  const arch = archLabel(platform);
+  const arch = archLabel(targetPlatform);
   const targetName = `CS-Demo-Analyst_${version}_${arch}${suffix}${ext}`;
-  fs.mkdirSync(artifactsDir, { recursive: true });
   const targetPath = path.join(artifactsDir, targetName);
   fs.copyFileSync(source, targetPath);
+  collected.push(targetPath);
   console.log(`Collected ${source} -> ${targetPath}`);
-  return targetPath;
 }
 
 const files = walk(bundleRoot);
@@ -85,3 +94,12 @@ if (platform === 'windows') {
     process.exit(1);
   }
 }
+
+writeStamp(path.join(artifactsDir, 'collect.json'), {
+  job: 'collect',
+  status: 'ok',
+  platform,
+  artifacts: collected,
+});
+
+console.log(`Release collect output: ${artifactsDir}`);

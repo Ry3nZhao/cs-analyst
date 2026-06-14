@@ -2,9 +2,8 @@
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { root } from '../lib/paths.mjs';
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const iconsDir = path.join(root, 'crates', 'tauri-app', 'src-tauri', 'icons');
 const b64Path = path.join(iconsDir, 'icon.png.b64');
 const pngPath = path.join(iconsDir, 'icon.png');
@@ -25,7 +24,6 @@ const result = spawnSync('pnpm', ['exec', 'tauri', 'icon', pngPath, '-o', 'src-t
 });
 
 if (result.status !== 0) {
-  // Fallback: copy png as ico placeholder (Tauri may still accept png in some versions)
   fs.copyFileSync(pngPath, path.join(iconsDir, 'icon.ico'));
   console.warn('tauri icon generation failed, using png copy as icon.ico fallback');
 }

@@ -96,7 +96,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           pnpm version ${{ github.event.inputs.release-type }} --no-git-tag-version
-          node scripts/sync-version.mjs
+          node scripts/common/sync-version.mjs
           git add package.json crates/tauri-app/src-tauri/tauri.conf.json crates/tauri-app/src-tauri/Cargo.toml
           git commit -m "chore: release v$(node -p "require('./package.json').version")"
           git push origin HEAD:master
@@ -166,7 +166,7 @@ jobs:
         run: test -f crates/tauri-app/src-tauri/resources/sidecar/index.js
 
       - name: Sync Tauri version
-        run: node scripts/sync-version.mjs
+        run: node scripts/common/sync-version.mjs
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -180,13 +180,13 @@ jobs:
         run: pnpm run package
 
       - name: Collect installer artifact
-        run: node scripts/collect-bundle.mjs ${{ matrix.platform }}
+        run: node scripts/release/collect.mjs ${{ matrix.platform }}
 
       - name: Upload workflow artifact
         uses: actions/upload-artifact@v5
         with:
           name: ${{ matrix.artifact_name }}
-          path: artifacts/*
+          path: build/release/*
           if-no-files-found: error
 
   publish:

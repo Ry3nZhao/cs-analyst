@@ -51,10 +51,29 @@ cargo tauri dev
 | 命令 | 说明 |
 |------|------|
 | `pnpm dev` | 本地开发 |
+| `pnpm validate` | 本地跑完整 Validate（对齐 CI） |
+| `pnpm validate:typescript` | 仅 TS / sidecar 编译 |
+| `pnpm validate:frontend` | 仅 Nuxt generate，输出到 `build/validate/desktop/` |
+| `pnpm validate:rust` | sidecar 打包 + 图标 + `cargo check` |
+| `pnpm release` | 本地 Release：打包并收集安装包到 `build/release/` |
 | `pnpm build` | 编译 shared-types、sidecar，并 Nuxt generate |
 | `pnpm build:sidecar` | 打包 sidecar 到 Tauri resources |
 | `pnpm sync-version` | 同步版本号到各包 |
 | `pnpm generate-icons` | 生成应用图标 |
+
+### Validate 输出目录
+
+```
+build/
+└── validate/
+    ├── desktop/          # 前端 generate 副本
+    ├── typescript.json
+    ├── frontend.json
+    ├── rust.json
+    └── summary.json
+```
+
+已安装依赖时可加 `--skip-install`：`pnpm validate --skip-install`
 
 ## Sidecar 调试
 

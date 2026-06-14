@@ -2,16 +2,8 @@
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-
-function runPnpm(args, cwd = root) {
-  const result = spawnSync('pnpm', args, { cwd, stdio: 'inherit', shell: true });
-  if (result.status !== 0) {
-    throw new Error(`pnpm ${args.join(' ')} failed`);
-  }
-}
+import { root } from '../lib/paths.mjs';
+import { runPnpm } from '../lib/run.mjs';
 
 const sidecarDist = path.join(root, 'packages', 'sidecar', 'dist');
 const sharedDist = path.join(root, 'packages', 'shared-types', 'dist');
