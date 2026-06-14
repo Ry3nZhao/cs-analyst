@@ -6,9 +6,19 @@
 
 - Node.js **24.16.0**（见根目录 `.node-version`）
 - pnpm 9+
-- Rust（stable）
+- Rust（stable，[rustup](https://rustup.rs/) 安装；验证 `cargo -V`）
 - **Windows**：Visual Studio Build Tools（含 C++），Tauri 打包必需
 - **Linux**：`libwebkit2gtk` 等 Tauri 系统依赖（CI 已列出完整列表）
+
+### 安装 Rust
+
+```bash
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+source "$HOME/.cargo/env"   # 或重开终端
+cargo -V
+```
+
+若 `pnpm validate` 报 `cargo not found`，说明当前 shell 的 `PATH` 未包含 `~/.cargo/bin`。
 
 ### 安装 Node 24.16
 

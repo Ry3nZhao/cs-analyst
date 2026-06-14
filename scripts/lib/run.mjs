@@ -1,7 +1,31 @@
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { root } from './paths.mjs';
+
+function commandHint(command, error) {
+  if (error?.code !== 'ENOENT') {
+    return null;
+  }
+  const base = path.basename(command).replace(/\.exe$/i, '');
+  if (base === 'cargo') {
+    return 'Install Rust from https://rustup.rs/ (curl --proto \'=https\' --tlsv1.2 -sSf https://sh.rustup.rs | sh), then restart the terminal or add ~/.cargo/bin to PATH. You can also set CARGO=/path/to/cargo.';
+  }
+  return null;
+}
+
+export function resolveCargoCommand() {
+  if (process.env.CARGO) {
+    return process.env.CARGO;
+  }
+  const cargoName = process.platform === 'win32' ? 'cargo.exe' : 'cargo';
+  const homeCargo = path.join(os.homedir(), '.cargo', 'bin', cargoName);
+  if (fs.existsSync(homeCargo)) {
+    return homeCargo;
+  }
+  return 'cargo';
+}
 
 export function run(command, args = [], options = {}) {
   const { cwd = root, env, label } = options;
@@ -14,7 +38,11 @@ export function run(command, args = [], options = {}) {
     stdio: 'inherit',
     shell: process.platform === 'win32',
   });
-  if (result.status !== 0) {
+  if (result.error || result.status !== 0) {
+    const hint = commandHint(command, result.error);
+    if (hint) {
+      throw new Error(hint);
+    }
     const details = [];
     if (result.error) {
       details.push(result.error.message);
@@ -34,7 +62,10 @@ export function runPnpm(args, options = {}) {
 }
 
 export function runCargo(args, options = {}) {
-  run('cargo', args, { ...options, cwd: options.cwd ?? path.join(root, 'crates', 'tauri-app', 'src-tauri') });
+  run(resolveCargoCommand(), args, {
+    ...options,
+    cwd: options.cwd ?? path.join(root, 'crates', 'tauri-app', 'src-tauri'),
+  });
 }
 
 export function writeStamp(stampPath, payload) {
