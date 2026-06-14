@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { buildReleaseDir, ensureDir } from '../lib/paths.mjs';
 import { runPnpm, writeStamp } from '../lib/run.mjs';
 
@@ -18,10 +18,10 @@ async function main() {
   const dir = path.dirname(fileURLToPath(import.meta.url));
 
   if (!skipPackage) {
-    await import(path.join(dir, 'package.mjs'));
+    await import(pathToFileURL(path.join(dir, 'package.mjs')).href);
   }
 
-  await import(path.join(dir, 'collect.mjs'));
+  await import(pathToFileURL(path.join(dir, 'collect.mjs')).href);
 
   writeStamp(path.join(buildReleaseDir, 'summary.json'), {
     workflow: 'release',

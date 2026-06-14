@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { buildValidateDir, ensureDir } from '../lib/paths.mjs';
 import { runPnpm, writeStamp } from '../lib/run.mjs';
 
@@ -18,7 +18,7 @@ async function main() {
   const steps = ['typescript.mjs', 'frontend.mjs', 'rust.mjs'];
 
   for (const step of steps) {
-    await import(path.join(dir, step));
+    await import(pathToFileURL(path.join(dir, step)).href);
   }
 
   writeStamp(path.join(buildValidateDir, 'summary.json'), {

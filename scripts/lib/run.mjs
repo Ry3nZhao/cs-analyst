@@ -15,7 +15,17 @@ export function run(command, args = [], options = {}) {
     shell: process.platform === 'win32',
   });
   if (result.status !== 0) {
-    throw new Error(`${command} ${args.join(' ')} failed with exit code ${result.status ?? 'unknown'}`);
+    const details = [];
+    if (result.error) {
+      details.push(result.error.message);
+    }
+    if (result.signal) {
+      details.push(`signal ${result.signal}`);
+    }
+    const suffix = details.length ? ` (${details.join(', ')})` : '';
+    throw new Error(
+      `${command} ${args.join(' ')} failed with exit code ${result.status ?? 'unknown'}${suffix}`,
+    );
   }
 }
 
