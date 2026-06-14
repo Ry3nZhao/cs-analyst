@@ -71,6 +71,10 @@ jobs:
   rust:
     name: Rust check
     runs-on: ubuntu-latest
+    env:
+      CARGO_TERM_PROGRESS_WHEN: always
+      CARGO_TERM_PROGRESS_WIDTH: 80
+      CARGO_TERM_COLOR: always
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -112,4 +116,4 @@ jobs:
 
       - name: Cargo check
         working-directory: crates/tauri-app/src-tauri
-        run: cargo check
+        run: cargo check --timings
