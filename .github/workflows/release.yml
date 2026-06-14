@@ -287,7 +287,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag -fa latest-beta "${{ needs.prepare.outputs.checkout_ref }}"
+          git tag -f latest-beta "${{ needs.prepare.outputs.checkout_ref }}"
           git push origin latest-beta --force
 
       - name: Publish beta GitHub Release
