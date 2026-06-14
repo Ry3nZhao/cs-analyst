@@ -3,6 +3,7 @@ use crate::db::repo;
 use crate::orchestrator::DownloadOrchestrator;
 use crate::sidecar::SidecarManager;
 use crate::AppState;
+use std::path::{Path, PathBuf};
 use serde_json::Value;
 use tauri::State;
 
@@ -166,6 +167,20 @@ pub fn cancel_download_job(
 }
 
 #[tauri::command]
-pub fn open_path(path: String) -> Result<(), String> {
-    open::that(path).map_err(|e| e.to_string())
+pub fn open_path(state: State<'_, AppState>, path: String) -> Result<(), String> {
+    let resolved = resolve_data_path(&state, Path::new(&path))?;
+    open::that(resolved).map_err(|e| e.to_string())
+}
+
+fn resolve_data_path(state: &AppState, path: &Path) -> Result<PathBuf, String> {
+    if path.is_absolute() {
+        return Ok(path.to_path_buf());
+    }
+    let root = state.db.lock().data_root.clone();
+    let relative = path
+        .to_string_lossy()
+        .strip_prefix("./")
+        .map(str::to_string)
+        .unwrap_or_else(|| path.to_string_lossy().to_string());
+    Ok(root.join(relative))
 }

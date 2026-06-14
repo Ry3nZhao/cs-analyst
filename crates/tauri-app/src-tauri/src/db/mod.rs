@@ -43,6 +43,16 @@ impl Database {
                 let _ = self.conn.execute_batch(&format!("{stmt};"));
             }
         }
+        self.sync_default_settings_data_root()?;
+        Ok(())
+    }
+
+    fn sync_default_settings_data_root(&self) -> Result<()> {
+        self.conn.execute(
+            "UPDATE app_settings SET data_root = './'
+             WHERE id = 1 AND data_root IN ('C:\\CS-Analyst\\Data', 'C:/CS-Analyst/Data')",
+            [],
+        )?;
         Ok(())
     }
 
@@ -72,6 +82,11 @@ impl Database {
     }
 }
 
-pub fn default_data_root() -> PathBuf {
-    PathBuf::from(r"C:\CS-Analyst\Data")
+pub fn resolve_install_dir() -> PathBuf {
+    std::env::current_exe()
+        .ok()
+        .and_then(|exe| exe.parent().map(|p| p.to_path_buf()))
+        .and_then(|dir| dir.canonicalize().ok())
+        .or_else(|| std::env::current_dir().ok())
+        .unwrap_or_else(|| PathBuf::from("."))
 }

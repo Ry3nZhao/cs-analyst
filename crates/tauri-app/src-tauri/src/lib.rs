@@ -3,7 +3,7 @@ mod db;
 mod orchestrator;
 mod sidecar;
 
-use db::{default_data_root, Database};
+use db::{resolve_install_dir, Database};
 use orchestrator::DownloadOrchestrator;
 use parking_lot::Mutex;
 use sidecar::{resolve_sidecar_script, SidecarManager};
@@ -21,7 +21,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .setup(|app| {
-            let data_root = default_data_root();
+            let data_root = resolve_install_dir();
             let database = Database::open(data_root).expect("failed to open database");
             let db = Arc::new(Mutex::new(database));
             let script = resolve_sidecar_script();
