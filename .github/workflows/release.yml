@@ -227,6 +227,64 @@ jobs:
           tag_name: v${{ needs.prepare.outputs.version }}
           name: CS Demo Analyst v${{ needs.prepare.outputs.version }}
           generate_release_notes: true
+          make_latest: true
+          files: |
+            dist/windows/*
+            dist/macos/*
+            dist/linux/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-beta:
+    name: Publish Beta Release
+    needs: [prepare, build]
+    if: github.event_name == 'workflow_run'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.prepare.outputs.checkout_ref }}
+          fetch-depth: 0
+
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: windows-nsis-x64
+          path: dist/windows
+
+      - name: Download macOS artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: macos-dmg
+          path: dist/macos
+
+      - name: Download Linux artifacts
+        uses: actions/download-artifact@v5
+        with:
+          name: linux-packages
+          path: dist/linux
+
+      - name: Update latest-beta tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -fa latest-beta "${{ needs.prepare.outputs.checkout_ref }}"
+          git push origin latest-beta --force
+
+      - name: Publish beta GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest-beta
+          name: Latest Beta (v${{ needs.prepare.outputs.version }})
+          prerelease: true
+          make_latest: false
+          generate_release_notes: true
+          body: |
+            Rolling beta build for commit `${{ needs.prepare.outputs.checkout_ref }}`.
+            Package version in tree: **v${{ needs.prepare.outputs.version }}**.
+            Workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           files: |
             dist/windows/*
             dist/macos/*
