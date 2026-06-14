@@ -139,10 +139,6 @@ jobs:
         with:
           ref: ${{ github.event_name == 'workflow_dispatch' && needs.prepare.outputs.bumped == 'true' && 'master' || needs.prepare.outputs.checkout_ref }}
 
-      - name: Setup MSVC toolchain
-        if: matrix.platform == 'windows'
-        uses: ilammy/msvc-dev-tools@v1
-
       - name: Install Linux dependencies
         if: matrix.platform == 'linux'
         run: |
