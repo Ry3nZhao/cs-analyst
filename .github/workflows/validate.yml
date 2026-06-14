@@ -96,6 +96,9 @@ jobs:
       - name: Bundle sidecar resources
         run: pnpm build:sidecar
 
+      - name: Verify sidecar resources
+        run: test -f crates/tauri-app/src-tauri/resources/sidecar/index.js
+
       - name: Generate frontend
         run: pnpm --filter @cs-demo-analyst/desktop generate
 

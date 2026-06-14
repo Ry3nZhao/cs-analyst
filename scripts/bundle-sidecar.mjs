@@ -28,6 +28,11 @@ for (const file of fs.readdirSync(sidecarDist)) {
   }
 }
 
+const bundledJs = fs.readdirSync(targetDir).filter((file) => file.endsWith('.js'));
+if (bundledJs.length === 0) {
+  throw new Error(`no sidecar .js files copied from ${sidecarDist}`);
+}
+
 const sharedTarget = path.join(targetDir, 'node_modules', '@cs-demo-analyst', 'shared-types');
 fs.mkdirSync(path.dirname(sharedTarget), { recursive: true });
 fs.cpSync(sharedDist, path.join(sharedTarget, 'dist'), { recursive: true });

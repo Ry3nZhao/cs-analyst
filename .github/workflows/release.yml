@@ -162,6 +162,9 @@ jobs:
       - name: Bundle sidecar resources
         run: pnpm build:sidecar
 
+      - name: Verify sidecar resources
+        run: test -f crates/tauri-app/src-tauri/resources/sidecar/index.js
+
       - name: Sync Tauri version
         run: node scripts/sync-version.mjs
 

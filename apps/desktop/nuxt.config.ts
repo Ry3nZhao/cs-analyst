@@ -3,6 +3,9 @@ export default defineNuxtConfig({
   modules: ['@nuxt/ui'],
   ssr: false,
   telemetry: false,
+  sourcemap: {
+    client: false,
+  },
   devServer: { host: '0', port: 3000 },
   vite: {
     clearScreen: false,
