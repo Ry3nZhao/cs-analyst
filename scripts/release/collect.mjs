@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import fs from 'node:fs';
 import path from 'node:path';
-import { buildReleaseDir, ensureDir, root } from '../lib/paths.mjs';
+import { buildReleaseDir, cargoReleaseBundleDir, ensureDir, root } from '../lib/paths.mjs';
 import { writeStamp } from '../lib/run.mjs';
 
 function detectPlatform(arg) {
@@ -14,7 +14,7 @@ function detectPlatform(arg) {
 const arg = process.argv[2];
 const platform = ['windows', 'macos', 'linux'].includes(arg) ? arg : detectPlatform();
 
-const bundleRoot = path.join(root, 'crates', 'tauri-app', 'src-tauri', 'target', 'release', 'bundle');
+const bundleRoot = cargoReleaseBundleDir();
 const version = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).version;
 const artifactsDir = process.env.BUILD_RELEASE_DIR
   ? path.resolve(process.env.BUILD_RELEASE_DIR)

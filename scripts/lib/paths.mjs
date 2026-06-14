@@ -21,6 +21,18 @@ export const sidecarResourceIndex = path.join(
   'index.js',
 );
 
+/** Respects CARGO_TARGET_DIR when set (e.g. short path on Windows CI). */
+export function cargoTargetDir() {
+  if (process.env.CARGO_TARGET_DIR) {
+    return path.resolve(process.env.CARGO_TARGET_DIR);
+  }
+  return path.join(tauriDir, 'target');
+}
+
+export function cargoReleaseBundleDir() {
+  return path.join(cargoTargetDir(), 'release', 'bundle');
+}
+
 export function ensureDir(dir) {
   fs.mkdirSync(dir, { recursive: true });
 }

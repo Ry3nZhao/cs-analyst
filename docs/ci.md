@@ -62,5 +62,6 @@ git push origin v0.1.0
 - **Actions**：`checkout` / `setup-node` / `pnpm/action-setup` / `upload-artifact` / `download-artifact` 均为 **v5**（Node 24 运行时）；`rust-cache@v2.9.1`
 - **兜底**：workflow 级 `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true`（覆盖尚未升级的第三方 Action）
 - **Rust**：`dtolnay/rust-toolchain@stable`；Linux runner 额外安装 `libwebkit2gtk` 等 Tauri 依赖
+- **Windows Release**：`windows-2022` + MSVC dev tools；`bundled` DuckDB 编译使用短路径 `CARGO_TARGET_DIR=D:\ct`、`CARGO_BUILD_JOBS=1`、`CXXFLAGS=/EHsc`
 
 本地与 CI 对齐的打包命令见 [打包发布 — 收集构建产物](build.md#收集构建产物）。
