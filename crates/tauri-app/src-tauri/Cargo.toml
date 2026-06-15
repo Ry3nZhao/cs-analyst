@@ -1,6 +1,6 @@
 [package]
 name = "cs-demo-analyst"
-version = "0.1.0"
+version = "0.1.1"
 description = "CS Demo Analyst"
 authors = ["Ryen"]
 edition = "2021"

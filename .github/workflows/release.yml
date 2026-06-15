@@ -246,6 +246,7 @@ jobs:
         with:
           tag_name: v${{ needs.prepare.outputs.version }}
           name: CS Demo Analyst v${{ needs.prepare.outputs.version }}
+          body_path: release.md
           generate_release_notes: true
           make_latest: true
           overwrite_files: true
