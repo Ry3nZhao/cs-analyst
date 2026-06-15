@@ -250,9 +250,11 @@ jobs:
           make_latest: true
           overwrite_files: true
           files: |
-            dist/windows/*
-            dist/macos/*
-            dist/linux/*
+            dist/windows/*.exe
+            dist/macos/*.dmg
+            dist/linux/*.AppImage
+            dist/linux/*.deb
+            dist/linux/*.rpm
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -308,8 +310,10 @@ jobs:
             Package version in tree: **v${{ needs.prepare.outputs.version }}**.
             Workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           files: |
-            dist/windows/*
-            dist/macos/*
-            dist/linux/*
+            dist/windows/*.exe
+            dist/macos/*.dmg
+            dist/linux/*.AppImage
+            dist/linux/*.deb
+            dist/linux/*.rpm
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
