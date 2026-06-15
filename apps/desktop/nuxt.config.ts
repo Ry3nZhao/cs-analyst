@@ -18,12 +18,15 @@ export default defineNuxtConfig({
   sourcemap: {
     client: false,
   },
-  devServer: { host: '0', port: 3000 },
+  devServer: { host: '127.0.0.1', port: 3000 },
   vite: {
     customLogger: viteLogger,
     clearScreen: false,
     envPrefix: ['VITE_', 'TAURI_'],
     server: { strictPort: true },
+    optimizeDeps: {
+      include: ['@tauri-apps/api/core', '@tauri-apps/api/event'],
+    },
   },
   ignore: ['**/src-tauri/**'],
   css: ['~/assets/css/main.css'],

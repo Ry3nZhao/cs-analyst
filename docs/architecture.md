@@ -18,7 +18,7 @@
 ```
 
 - **前端**（`apps/desktop`）：账号、下载队列、设置等界面
-- **Rust**（`crates/tauri-app`）：DuckDB 持久化、下载调度、状态机、文件落盘
+- **Rust**（`crates/tauri-app`）：SQLite 持久化、下载调度、状态机、文件落盘
 - **Sidecar**（`packages/sidecar`）：各平台 demo 发现与下载，通过 JSON-RPC 与 Rust 通信
 
 ## 仓库结构
@@ -30,13 +30,13 @@ cs-demo-analyst/
 │   ├── sidecar/           # JSON-RPC 下载引擎
 │   └── shared-types/      # 前后端共享类型
 ├── crates/tauri-app/      # Rust + Tauri 壳
-├── migrations/duckdb/     # 数据库 schema
+├── migrations/sqlite/     # 数据库 schema
 └── scripts/               # 打包、图标、版本同步等脚本
 ```
 
 ## 数据层
 
-DuckDB 单文件数据库，schema 见 `migrations/duckdb/001_initial.sql`。主要表：
+SQLite 单文件数据库，schema 见 `migrations/sqlite/001_initial.sql`。主要表：
 
 - `users` / `sub_accounts` — 用户与子账号
 - `download_jobs` / `discovered_matches` — 发现与下载任务

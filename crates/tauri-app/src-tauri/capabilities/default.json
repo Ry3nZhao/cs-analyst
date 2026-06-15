@@ -1,11 +1,21 @@
 {
-  "$schema": "https://schema.tauri.app/config/2/capability",
+  "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Default capabilities",
+  "description": "Default capability for CS Demo Analyst",
   "windows": ["main"],
   "permissions": [
     "core:default",
-    "shell:allow-spawn",
-    "shell:allow-open"
+    "shell:default",
+    "shell:allow-execute",
+    {
+      "identifier": "shell:allow-spawn",
+      "allow": [
+        {
+          "name": "sidecar/node",
+          "sidecar": true,
+          "args": true
+        }
+      ]
+    }
   ]
 }

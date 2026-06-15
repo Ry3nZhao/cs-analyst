@@ -39,14 +39,7 @@
   },
   "plugins": {
     "shell": {
-      "sidecar": true,
-      "scope": [
-        {
-          "name": "sidecar/node",
-          "sidecar": true,
-          "args": true
-        }
-      ]
+      "open": true
     }
   }
 }

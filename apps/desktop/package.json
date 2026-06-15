@@ -19,6 +19,7 @@
     "vue": "^3.5.16"
   },
   "devDependencies": {
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "vite": "^7.3.5"
   }
 }

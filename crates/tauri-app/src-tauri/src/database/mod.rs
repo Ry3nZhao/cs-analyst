@@ -1,15 +1,16 @@
 pub mod models;
 pub mod repo;
 
-use duckdb::Connection;
+use rusqlite::Connection;
 use std::fs;
 use std::path::{Path, PathBuf};
+use tauri::Manager;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum DbError {
-    #[error("duckdb: {0}")]
-    Duck(#[from] duckdb::Error),
+    #[error("sqlite: {0}")]
+    Sqlite(#[from] rusqlite::Error),
     #[error("io: {0}")]
     Io(#[from] std::io::Error),
     #[error("{0}")]
@@ -28,31 +29,23 @@ impl Database {
         fs::create_dir_all(data_root.join("db"))?;
         fs::create_dir_all(data_root.join("demos"))?;
         fs::create_dir_all(data_root.join("state"))?;
-        let db_path = data_root.join("db").join("analyst.duckdb");
+        let db_path = data_root.join("db").join("analyst.db");
         let conn = Connection::open(&db_path)?;
+        conn.execute_batch("PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;")?;
         let db = Self { conn, data_root };
         db.migrate()?;
         Ok(db)
     }
 
     fn migrate(&self) -> Result<()> {
-        let sql = include_str!("../../../../../migrations/duckdb/001_initial.sql");
-        for statement in sql.split(';') {
-            let stmt = statement.trim();
-            if !stmt.is_empty() && !stmt.starts_with("--") {
-                let _ = self.conn.execute_batch(&format!("{stmt};"));
-            }
-        }
-        self.sync_default_settings_data_root()?;
-        Ok(())
-    }
+        let version: i32 = self.conn.query_row("PRAGMA user_version", [], |r| r.get(0))?;
 
-    fn sync_default_settings_data_root(&self) -> Result<()> {
-        self.conn.execute(
-            "UPDATE app_settings SET data_root = './'
-             WHERE id = 1 AND data_root IN ('C:\\CS-Analyst\\Data', 'C:/CS-Analyst/Data')",
-            [],
-        )?;
+        if version < 1 {
+            self.conn
+                .execute_batch(include_str!("../../../../../migrations/sqlite/001_initial.sql"))?;
+            self.conn.execute_batch("PRAGMA user_version = 1")?;
+        }
+
         Ok(())
     }
 
@@ -82,11 +75,8 @@ impl Database {
     }
 }
 
-pub fn resolve_install_dir() -> PathBuf {
-    std::env::current_exe()
-        .ok()
-        .and_then(|exe| exe.parent().map(|p| p.to_path_buf()))
-        .and_then(|dir| dir.canonicalize().ok())
-        .or_else(|| std::env::current_dir().ok())
-        .unwrap_or_else(|| PathBuf::from("."))
+pub fn resolve_data_root(app: &tauri::AppHandle) -> PathBuf {
+    app.path()
+        .app_local_data_dir()
+        .unwrap_or_else(|_| PathBuf::from("."))
 }

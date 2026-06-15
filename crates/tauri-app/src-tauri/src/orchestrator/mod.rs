@@ -1,6 +1,6 @@
-use crate::db::models::DiscoveredMatchPayload;
-use crate::db::repo;
-use crate::db::Database;
+use crate::database::models::DiscoveredMatchPayload;
+use crate::database::repo;
+use crate::database::Database;
 use crate::sidecar::SidecarManager;
 use parking_lot::Mutex;
 use serde_json::json;
@@ -12,7 +12,7 @@ use thiserror::Error;
 #[derive(Error, Debug)]
 pub enum OrchestratorError {
     #[error("db: {0}")]
-    Db(#[from] crate::db::DbError),
+    Db(#[from] crate::database::DbError),
     #[error("sidecar: {0}")]
     Sidecar(#[from] crate::sidecar::SidecarError),
     #[error("{0}")]

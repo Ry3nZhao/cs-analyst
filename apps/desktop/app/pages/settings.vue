@@ -1,57 +1,100 @@
 <template>
-  <div class="space-y-6 max-w-2xl">
-    <UCard class="bg-[#242830] border-[#2e3340]">
-      <h3 class="font-medium mb-4">数据目录</h3>
-      <div class="flex gap-2">
-        <UInput v-model="settings.dataRoot" class="flex-1" />
-        <UButton @click="save">保存</UButton>
-        <UButton variant="soft" @click="openDataRoot">打开目录</UButton>
+  <div class="settings-page">
+    <!-- Storage -->
+    <div class="card">
+      <div class="card-title">数据目录</div>
+      <div class="card-desc">Demo 文件和数据库的存储位置</div>
+      <div class="row-input">
+        <input v-model="settings.dataRoot" class="field-input flex-1" placeholder="/path/to/data" />
+        <button class="btn-primary" @click="save">保存</button>
+        <button class="btn-ghost" @click="openDataRoot">打开目录</button>
       </div>
-    </UCard>
+    </div>
 
-    <UCard class="bg-[#242830] border-[#2e3340]">
-      <h3 class="font-medium mb-4">调度</h3>
-      <div class="space-y-3">
-        <div class="flex items-center justify-between">
-          <span>全局最大并发</span>
-          <UInput v-model.number="settings.globalMaxConcurrent" type="number" class="w-24" />
+    <!-- Scheduling -->
+    <div class="card">
+      <div class="card-title">调度设置</div>
+      <div class="setting-row">
+        <div class="setting-info">
+          <span class="setting-name">全局最大并发下载数</span>
+          <span class="setting-desc">同时进行的最大下载任务数量</span>
         </div>
-        <div class="flex items-center justify-between">
-          <span>启动时自动发现</span>
-          <USwitch v-model="settings.autoDiscoverOnStartup" />
-        </div>
+        <input
+          v-model.number="settings.globalMaxConcurrent"
+          type="number"
+          min="1"
+          max="10"
+          class="num-input"
+          @change="save"
+        />
       </div>
-      <UButton class="mt-4" @click="save">保存设置</UButton>
-    </UCard>
+      <div class="setting-row">
+        <div class="setting-info">
+          <span class="setting-name">启动时自动发现</span>
+          <span class="setting-desc">应用启动后立即执行一次 Demo 发现</span>
+        </div>
+        <button
+          class="toggle-btn"
+          :class="{ on: settings.autoDiscoverOnStartup }"
+          @click="settings.autoDiscoverOnStartup = !settings.autoDiscoverOnStartup; save()"
+        >
+          <span class="toggle-knob" />
+        </button>
+      </div>
+    </div>
 
-    <UCard class="bg-[#242830] border-[#2e3340]">
-      <h3 class="font-medium mb-4">平台重试</h3>
-      <div v-for="p in platforms" :key="p.platform" class="border-b border-[#2e3340] py-3 last:border-0">
-        <div class="font-medium capitalize mb-2">{{ p.platform }}</div>
-        <div class="flex items-center gap-4 text-sm">
-          <label class="flex items-center gap-2">
-            <USwitch v-model="p.autoRetryFailed" @update:model-value="savePlatform(p)" />
-            下周期自动重试
-          </label>
-          <UInput
+    <!-- Platform settings -->
+    <div class="card">
+      <div class="card-title">平台重试策略</div>
+      <div
+        v-for="(p, i) in platforms"
+        :key="p.platform"
+        class="platform-section"
+        :class="{ 'not-last': i < platforms.length - 1 }"
+      >
+        <div class="platform-name">{{ platformLabel(p.platform) }}</div>
+        <div class="setting-row sub">
+          <div class="setting-info">
+            <span class="setting-name">失败时自动重试</span>
+          </div>
+          <button
+            class="toggle-btn"
+            :class="{ on: p.autoRetryFailed }"
+            @click="p.autoRetryFailed = !p.autoRetryFailed; savePlatform(p)"
+          >
+            <span class="toggle-knob" />
+          </button>
+        </div>
+        <div class="setting-row sub">
+          <div class="setting-info">
+            <span class="setting-name">最大自动尝试次数</span>
+            <span class="setting-desc">留空表示不限制</span>
+          </div>
+          <input
             v-model.number="p.maxAutoAttempts"
             type="number"
-            placeholder="不限"
-            class="w-24"
-            @blur="savePlatform(p)"
+            min="1"
+            placeholder="∞"
+            class="num-input"
+            @change="savePlatform(p)"
           />
         </div>
       </div>
-    </UCard>
+    </div>
 
-    <UCard class="bg-[#242830] border-[#2e3340]">
-      <h3 class="font-medium mb-2">运行时</h3>
-      <p class="text-sm text-gray-400">版本 0.1.0</p>
-      <div class="flex gap-2 mt-3">
-        <UButton size="sm" variant="soft" @click="openDb">打开数据库目录</UButton>
-        <UButton size="sm" variant="soft" @click="openLogs">打开日志目录</UButton>
+    <!-- About -->
+    <div class="card card-about">
+      <div class="about-row">
+        <div>
+          <div class="card-title">CS Demo Analyst</div>
+          <div class="card-desc">版本 0.1.0 · 自动发现并下载 CS2 Demo 文件</div>
+        </div>
+        <div class="about-actions">
+          <button class="btn-ghost" @click="openDb">数据库目录</button>
+          <button class="btn-ghost" @click="openLogs">日志目录</button>
+        </div>
       </div>
-    </UCard>
+    </div>
   </div>
 </template>
 
@@ -61,40 +104,151 @@ import { tauriInvoke } from '~/composables/useTauri';
 
 definePageMeta({ layout: 'default' });
 
-const settings = reactive<AppSettingsDto>({
-  dataRoot: '',
-  globalMaxConcurrent: 3,
-  autoDiscoverOnStartup: true,
-});
-
-const platforms = ref<
-  { platform: string; autoRetryFailed: boolean; maxAutoAttempts: number | null }[]
->([]);
+const settings = reactive<AppSettingsDto>({ dataRoot: '', globalMaxConcurrent: 3, autoDiscoverOnStartup: true });
+const platforms = ref<{ platform: string; autoRetryFailed: boolean; maxAutoAttempts: number | null }[]>([]);
 
 async function load() {
   Object.assign(settings, await tauriInvoke<AppSettingsDto>('get_settings'));
   platforms.value = await tauriInvoke('list_platform_settings');
 }
 
-async function save() {
-  await tauriInvoke('update_settings', { settings });
-}
+async function save() { await tauriInvoke('update_settings', { settings }); }
+async function savePlatform(p: (typeof platforms.value)[0]) { await tauriInvoke('update_platform_settings', { platform: p }); }
 
-async function savePlatform(p: (typeof platforms.value)[0]) {
-  await tauriInvoke('update_platform_settings', { platform: p });
-}
+function platformLabel(p: string) { return { valve: 'Valve', renown: 'Renown', '5eplay': '5EPlay' }[p] ?? p; }
 
-async function openDataRoot() {
-  await tauriInvoke('open_path', { path: settings.dataRoot });
-}
-
-async function openDb() {
-  await tauriInvoke('open_path', { path: `${settings.dataRoot}/db` });
-}
-
-async function openLogs() {
-  await tauriInvoke('open_path', { path: `${settings.dataRoot}/state` });
-}
+async function openDataRoot() { await tauriInvoke('open_path', { path: settings.dataRoot }); }
+async function openDb()        { await tauriInvoke('open_path', { path: `${settings.dataRoot}/db` }); }
+async function openLogs()      { await tauriInvoke('open_path', { path: `${settings.dataRoot}/state` }); }
 
 onMounted(load);
 </script>
+
+<style scoped>
+.settings-page {
+  max-width: 640px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.card {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: 12px;
+  padding: 18px 20px;
+}
+.card-title { font-size: 13px; font-weight: 600; color: #fff; margin-bottom: 3px; }
+.card-desc  { font-size: 11px; color: var(--c-text-3); margin-bottom: 14px; }
+
+.row-input { display: flex; gap: 8px; align-items: center; }
+.field-input {
+  padding: 8px 10px;
+  border-radius: 7px;
+  border: 1px solid var(--c-border);
+  background: var(--c-card);
+  color: var(--c-text);
+  font-size: 13px;
+  outline: none;
+  min-width: 0;
+}
+.field-input:focus { border-color: var(--c-accent); }
+.field-input::placeholder { color: var(--c-text-faint); }
+.flex-1 { flex: 1; }
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--c-border-sub);
+}
+.setting-row:last-child, .setting-row.sub:last-child { border-bottom: none; }
+.setting-info { display: flex; flex-direction: column; gap: 2px; }
+.setting-name { font-size: 12px; color: var(--c-text); }
+.setting-desc { font-size: 11px; color: var(--c-text-3); }
+
+.num-input {
+  width: 64px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--c-border);
+  background: var(--c-card);
+  color: var(--c-text);
+  font-size: 13px;
+  text-align: center;
+  outline: none;
+}
+.num-input:focus { border-color: var(--c-accent); }
+
+/* Toggle */
+.toggle-btn {
+  position: relative;
+  width: 34px;
+  height: 18px;
+  border-radius: 9px;
+  background: var(--c-border);
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+  flex-shrink: 0;
+  padding: 0;
+}
+.toggle-btn.on { background: var(--c-accent); }
+.toggle-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.2s;
+  display: block;
+}
+.toggle-btn.on .toggle-knob { transform: translateX(16px); }
+
+/* Platform section */
+.platform-section { padding: 10px 0; }
+.platform-section.not-last { border-bottom: 1px solid var(--c-border); }
+.platform-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--c-accent-lt);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 4px;
+}
+.setting-row.sub { padding: 7px 0; }
+
+/* About */
+.about-row { display: flex; align-items: center; justify-content: space-between; }
+.about-actions { display: flex; gap: 8px; }
+.card-about .card-desc { margin-bottom: 0; }
+
+/* Buttons */
+.btn-primary {
+  padding: 7px 14px;
+  border-radius: 7px;
+  background: var(--c-accent);
+  color: #fff;
+  border: none;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn-primary:hover { opacity: 0.85; }
+.btn-ghost {
+  padding: 7px 14px;
+  border-radius: 7px;
+  background: rgba(255,255,255,0.05);
+  color: var(--c-text-2);
+  border: 1px solid rgba(255,255,255,0.08);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn-ghost:hover { background: rgba(255,255,255,0.08); color: var(--c-text); }
+</style>

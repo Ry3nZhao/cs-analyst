@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { msvcEnv } from './msvc.mjs';
 import { root } from './paths.mjs';
 
 function commandHint(command, error) {
@@ -65,6 +66,7 @@ export function runCargo(args, options = {}) {
   run(resolveCargoCommand(), args, {
     ...options,
     cwd: options.cwd ?? path.join(root, 'crates', 'tauri-app', 'src-tauri'),
+    env: { ...msvcEnv(), ...options.env },
   });
 }
 

@@ -1,12 +1,12 @@
 use super::models::*;
 use super::{Database, DbError, Result};
 use chrono::Utc;
-use duckdb::params;
+use rusqlite::params;
 use uuid::Uuid;
 
 pub fn list_users(db: &Database) -> Result<Vec<User>> {
     let mut stmt = db.conn.prepare(
-        "SELECT id, display_name, note, created_at::VARCHAR, updated_at::VARCHAR FROM users ORDER BY display_name",
+        "SELECT id, display_name, note, created_at, updated_at FROM users ORDER BY display_name",
     )?;
     let rows = stmt.query_map([], |row| {
         Ok(User {
@@ -60,7 +60,7 @@ pub fn delete_user(db: &Database, id: &str) -> Result<()> {
 
 pub fn list_sub_accounts(db: &Database, platform: &str) -> Result<Vec<SubAccount>> {
     let mut stmt = db.conn.prepare(
-        "SELECT id, user_id, platform, external_id, display_name, avatar_url, status, metadata, created_at::VARCHAR, updated_at::VARCHAR FROM sub_accounts WHERE platform = ? ORDER BY display_name",
+        "SELECT id, user_id, platform, external_id, display_name, avatar_url, status, metadata, created_at, updated_at FROM sub_accounts WHERE platform = ? ORDER BY display_name",
     )?;
     let rows = stmt.query_map(params![platform], |row| {
         let meta: String = row.get(7)?;
@@ -134,7 +134,7 @@ pub fn list_active_sub_accounts(db: &Database, platform: &str) -> Result<Vec<Sub
 
 pub fn get_sub_account(db: &Database, id: &str) -> Result<SubAccount> {
     let mut stmt = db.conn.prepare(
-        "SELECT id, user_id, platform, external_id, display_name, avatar_url, status, metadata, created_at::VARCHAR, updated_at::VARCHAR FROM sub_accounts WHERE id = ?",
+        "SELECT id, user_id, platform, external_id, display_name, avatar_url, status, metadata, created_at, updated_at FROM sub_accounts WHERE id = ?",
     )?;
     let account = stmt.query_row(params![id], |row| {
         let meta: String = row.get(7)?;
@@ -156,7 +156,7 @@ pub fn get_sub_account(db: &Database, id: &str) -> Result<SubAccount> {
 
 pub fn list_download_jobs(db: &Database) -> Result<Vec<DownloadJob>> {
     let mut stmt = db.conn.prepare(
-        "SELECT job_id, status, progress, platform, match_id, map_name, played_at::VARCHAR, valve_channel, user_id, user_name, account_name, account_id, attempts, last_error, demo_url, share_code FROM v_download_dashboard ORDER BY played_at DESC NULLS LAST",
+        "SELECT job_id, status, progress, platform, match_id, map_name, played_at, valve_channel, user_id, user_name, account_name, account_id, attempts, last_error, demo_url, share_code FROM v_download_dashboard ORDER BY played_at DESC NULLS LAST",
     )?;
     let rows = stmt.query_map([], |row| {
         Ok(DownloadJob {

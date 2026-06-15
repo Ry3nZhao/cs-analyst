@@ -39,22 +39,23 @@ pnpm install
 
 ## 本地调试
 
-推荐一键启动（sidecar + Nuxt + Tauri dev）：
+推荐一键启动（编译依赖 + `cargo tauri dev`，Tauri 会自动拉起 Nuxt）：
 
 ```powershell
 pnpm dev
 ```
 
-或分步构建后启动 Tauri：
+或分步手动启动：
 
 ```powershell
 pnpm --filter @cs-demo-analyst/shared-types build
 pnpm --filter @cs-demo-analyst/sidecar build
-pnpm --filter @cs-demo-analyst/desktop generate
 
 cd crates/tauri-app
 cargo tauri dev
 ```
+
+`cargo tauri dev` 会通过 `beforeDevCommand` 启动 Nuxt（`http://localhost:3000`），无需再单独跑 `pnpm --filter @cs-demo-analyst/desktop dev`。
 
 ## 常用脚本
 

@@ -1,5 +1,5 @@
-use crate::db::models::{AppSettings, AppStatus, PlatformSettings, SubAccount, User};
-use crate::db::repo;
+use crate::database::models::{AppSettings, AppStatus, PlatformSettings, SubAccount, User};
+use crate::database::repo;
 use crate::AppState;
 use std::path::{Path, PathBuf};
 use serde_json::Value;
@@ -75,8 +75,8 @@ pub fn add_sub_account(
     )
     .map_err(|e| e.to_string())?;
     let _ = state.db.lock().conn.execute(
-        "UPDATE platform_settings SET enabled = TRUE, updated_at = CURRENT_TIMESTAMP WHERE platform = ?",
-        duckdb::params![platform],
+        "UPDATE platform_settings SET enabled = 1, updated_at = datetime('now') WHERE platform = ?",
+        rusqlite::params![platform],
     );
     Ok(account)
 }
@@ -100,7 +100,7 @@ pub fn set_sub_account_status(
 }
 
 #[tauri::command]
-pub fn list_download_jobs(state: State<'_, AppState>) -> Result<Vec<crate::db::models::DownloadJob>, String> {
+pub fn list_download_jobs(state: State<'_, AppState>) -> Result<Vec<crate::database::models::DownloadJob>, String> {
     repo::list_download_jobs(&state.db.lock()).map_err(|e| e.to_string())
 }
 
