@@ -95,7 +95,7 @@ if (platform === 'windows') {
   }
 }
 
-writeStamp(path.join(artifactsDir, 'collect.json'), {
+writeStamp(path.join(artifactsDir, `collect-${platform}.json`), {
   job: 'collect',
   status: 'ok',
   platform,

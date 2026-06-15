@@ -184,10 +184,13 @@ jobs:
           CXXFLAGS: /EHsc
           CARGO_TARGET_DIR: D:\ct
           CARGO_BUILD_JOBS: 1
+          RELEASE_PLATFORM: ${{ matrix.platform }}
 
       - name: Build application
         if: matrix.platform != 'windows'
         run: pnpm run package
+        env:
+          RELEASE_PLATFORM: ${{ matrix.platform }}
 
       - name: Collect installer artifact (Windows)
         if: matrix.platform == 'windows'
@@ -245,6 +248,7 @@ jobs:
           name: CS Demo Analyst v${{ needs.prepare.outputs.version }}
           generate_release_notes: true
           make_latest: true
+          overwrite_files: true
           files: |
             dist/windows/*
             dist/macos/*
@@ -298,6 +302,7 @@ jobs:
           prerelease: true
           make_latest: false
           generate_release_notes: true
+          overwrite_files: true
           body: |
             Rolling beta build for commit `${{ needs.prepare.outputs.checkout_ref }}`.
             Package version in tree: **v${{ needs.prepare.outputs.version }}**.
