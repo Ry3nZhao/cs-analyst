@@ -33,7 +33,7 @@ cargo -V
 ## 安装依赖
 
 ```powershell
-cd cs-demo-analyst
+cd cs-analyst
 pnpm install
 ```
 
@@ -48,14 +48,14 @@ pnpm dev
 或分步手动启动：
 
 ```powershell
-pnpm --filter @cs-demo-analyst/shared-types build
-pnpm --filter @cs-demo-analyst/sidecar build
+pnpm --filter @cs-analyst/shared-types build
+pnpm --filter @cs-analyst/sidecar build
 
 cd crates/tauri-app
 cargo tauri dev
 ```
 
-`cargo tauri dev` 会通过 `beforeDevCommand` 启动 Nuxt（`http://localhost:3000`），无需再单独跑 `pnpm --filter @cs-demo-analyst/desktop dev`。
+`cargo tauri dev` 会通过 `beforeDevCommand` 启动 Nuxt（`http://localhost:3000`），无需再单独跑 `pnpm --filter @cs-analyst/desktop dev`。
 
 ## 常用脚本
 
@@ -90,8 +90,8 @@ build/
 
 开发时 sidecar 默认加载 `packages/sidecar/dist/index.js`。可通过环境变量覆盖：
 
-- `CS_DEMO_ANALYST_SIDECAR` — sidecar 入口脚本路径
-- `CS_DEMO_ANALYST_NODE` — Node 可执行文件路径
+- `CS_ANALYST_SIDECAR` — sidecar 入口脚本路径
+- `CS_ANALYST_NODE` — Node 可执行文件路径
 
 ## 数据目录
 

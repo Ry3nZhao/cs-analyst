@@ -45,7 +45,7 @@ const collected = [];
 function collectOne(source, targetPlatform, suffix = '') {
   const ext = path.extname(source);
   const arch = archLabel(targetPlatform);
-  const targetName = `CS-Demo-Analyst_${version}_${arch}${suffix}${ext}`;
+  const targetName = `CS-Analyst_${version}_${arch}${suffix}${ext}`;
   const targetPath = path.join(artifactsDir, targetName);
   fs.copyFileSync(source, targetPath);
   collected.push(targetPath);

@@ -97,7 +97,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           pnpm version ${{ github.event.inputs.release-type }} --no-git-tag-version
           node scripts/common/sync-version.mjs
-          git add package.json crates/tauri-app/src-tauri/tauri.conf.json crates/tauri-app/src-tauri/Cargo.toml
+          git add package.json src/tauri/src-tauri/tauri.conf.json src/tauri/src-tauri/Cargo.toml
           git commit -m "chore: release v$(node -p "require('./package.json').version")"
           git push origin HEAD:master
           echo "bumped=true" >> "$GITHUB_OUTPUT"
@@ -163,7 +163,7 @@ jobs:
         run: pnpm build:sidecar
 
       - name: Verify sidecar resources
-        run: test -f crates/tauri-app/src-tauri/resources/sidecar/index.js
+        run: test -f src/tauri/src-tauri/resources/sidecar/index.js
 
       - name: Sync Tauri version
         run: node scripts/common/sync-version.mjs
@@ -174,7 +174,7 @@ jobs:
       - name: Rust cache
         uses: swatinem/rust-cache@v2.9.1
         with:
-          workspaces: crates/tauri-app/src-tauri
+          workspaces: src/tauri/src-tauri
           shared-key: ${{ matrix.platform }}-release
 
       - name: Build application (Windows)
@@ -245,7 +245,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ needs.prepare.outputs.version }}
-          name: CS Demo Analyst v${{ needs.prepare.outputs.version }}
+          name: CS Analyst v${{ needs.prepare.outputs.version }}
           body_path: release.md
           generate_release_notes: true
           make_latest: true

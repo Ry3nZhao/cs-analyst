@@ -1,4 +1,4 @@
-# CS Demo Analyst Release
+# CS Analyst Release
 
 Official release for this version.
 

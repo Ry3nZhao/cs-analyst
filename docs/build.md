@@ -41,7 +41,7 @@ pnpm collect-bundle windows
 ```
 build/
 └── release/
-    ├── CS-Demo-Analyst_<version>_x64-setup.exe
+    ├── CS-Analyst_<version>_x64-setup.exe
     ├── package-step.json     # 打包步骤记录
     ├── collect.json          # 收集步骤记录
     └── summary.json          # 全流程完成标记

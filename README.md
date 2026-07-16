@@ -1,4 +1,4 @@
-# CS Demo Analyst
+# CS Analyst
 
 CS2 录像自动发现与下载的桌面应用。绑定多个平台账号后，后台持续拉取新 demo 并统一落盘，便于后续分析。
 

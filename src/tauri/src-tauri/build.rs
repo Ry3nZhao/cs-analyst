@@ -1,0 +1,39 @@
+const COMMANDS: &[&str] = &[
+    "get_app_status",
+    "get_background_task",
+    "get_background_task_logs",
+    "list_users",
+    "create_user",
+    "update_user",
+    "delete_user",
+    "list_sub_accounts",
+    "add_sub_account",
+    "update_sub_account",
+    "update_sub_account_meta",
+    "delete_sub_account",
+    "set_sub_account_status",
+    "list_matches",
+    "get_settings",
+    "update_settings",
+    "list_platform_settings",
+    "update_platform_settings",
+    "get_valve_bot_config",
+    "update_valve_bot_config",
+    "discover_now",
+    "toggle_queue_pause",
+    "retry_download_job",
+    "cancel_download_job",
+    "open_path",
+    "open_data_subdirectory",
+    "import_demos",
+    "refresh_match_metadata",
+    "force_download_now",
+];
+
+fn main() {
+    tauri_build::try_build(
+        tauri_build::Attributes::new()
+            .app_manifest(tauri_build::AppManifest::new().commands(COMMANDS)),
+    )
+    .expect("failed to run tauri-build");
+}

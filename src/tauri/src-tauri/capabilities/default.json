@@ -1,0 +1,23 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Default capability for CS Analyst",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "app-commands",
+    "shell:default",
+    "dialog:default",
+    "shell:allow-execute",
+    {
+      "identifier": "shell:allow-spawn",
+      "allow": [
+        {
+          "name": "sidecar/node",
+          "sidecar": true,
+          "args": true
+        }
+      ]
+    }
+  ]
+}

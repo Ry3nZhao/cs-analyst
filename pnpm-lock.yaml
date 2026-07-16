@@ -8,17 +8,20 @@ importers:
 
   .: {}
 
-  apps/desktop:
+  src/desktop:
     dependencies:
-      '@cs-demo-analyst/shared-types':
+      '@cs-analyst/shared-types':
         specifier: workspace:*
-        version: link:../../packages/shared-types
+        version: link:../shared-types
       '@nuxt/ui':
         specifier: ^4.8.2
         version: 4.8.2(@internationalized/date@3.12.2)(@internationalized/number@3.6.7)(@tiptap/extensions@3.26.1(@tiptap/core@3.26.1(@tiptap/pm@3.26.1))(@tiptap/pm@3.26.1))(@tiptap/y-tiptap@3.0.5(prosemirror-model@1.25.8)(prosemirror-state@1.4.4)(prosemirror-view@1.41.9)(y-protocols@1.0.7(yjs@13.6.31))(yjs@13.6.31))(axios@1.17.0)(db0@0.3.4)(embla-carousel@8.6.0)(ioredis@5.11.1)(magicast@0.5.3)(tailwindcss@4.3.1)(typescript@5.9.3)(vite@7.3.5(@types/node@24.13.2)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.48.0)(yaml@2.9.0))(vue-router@5.1.0(@vue/compiler-sfc@3.5.38)(vite@7.3.5(@types/node@24.13.2)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.48.0)(yaml@2.9.0))(vue@3.5.38(typescript@5.9.3)))(vue@3.5.38(typescript@5.9.3))(yjs@13.6.31)
       '@tauri-apps/api':
         specifier: ^2.5.0
         version: 2.11.0
+      '@tauri-apps/plugin-dialog':
+        specifier: ^2
+        version: 2.7.1
       '@tauri-apps/plugin-shell':
         specifier: ^2.2.1
         version: 2.3.5
@@ -36,26 +39,23 @@ importers:
         specifier: ^7.3.5
         version: 7.3.5(@types/node@24.13.2)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.48.0)(yaml@2.9.0)
 
-  crates/tauri-app:
-    devDependencies:
-      '@tauri-apps/cli':
-        specifier: ^2.5.0
-        version: 2.11.2
-
-  packages/shared-types:
+  src/shared-types:
     devDependencies:
       typescript:
         specifier: ^5.8.3
         version: 5.9.3
 
-  packages/sidecar:
+  src/sidecar:
     dependencies:
-      '@cs-demo-analyst/shared-types':
+      '@cs-analyst/shared-types':
         specifier: workspace:*
         version: link:../shared-types
       axios:
         specifier: ^1.9.0
         version: 1.17.0
+      csgo-protobuf:
+        specifier: ^4.1.6
+        version: 4.1.9
       csgo-sharecode:
         specifier: ^3.0.0
         version: 3.1.2
@@ -68,6 +68,12 @@ importers:
       p-timeout:
         specifier: ^6.1.4
         version: 6.1.4
+      snappyjs:
+        specifier: ^0.7.0
+        version: 0.7.0
+      steam-totp:
+        specifier: ^2.1.2
+        version: 2.1.2
       steam-user:
         specifier: ^5.2.0
         version: 5.3.0
@@ -78,15 +84,30 @@ importers:
         specifier: ^0.12.3
         version: 0.12.3
     devDependencies:
+      '@types/globaloffensive':
+        specifier: ^2.3.4
+        version: 2.3.4
       '@types/node':
         specifier: ^24.0.0
         version: 24.13.2
+      '@types/snappyjs':
+        specifier: ^0.7.1
+        version: 0.7.1
+      '@types/steam-totp':
+        specifier: ^2.1.2
+        version: 2.1.2
       '@types/unzipper':
         specifier: ^0.10.11
         version: 0.10.11
       typescript:
         specifier: ^5.8.3
         version: 5.9.3
+
+  src/tauri:
+    devDependencies:
+      '@tauri-apps/cli':
+        specifier: ^2.5.0
+        version: 2.11.2
 
 packages:
 
@@ -255,6 +276,9 @@ packages:
         optional: true
       commander:
         optional: true
+
+  '@bufbuild/protobuf@2.11.0':
+    resolution: {integrity: sha512-sBXGT13cpmPR5BMgHE6UEEfEaShh5Ror6rfN3yEK5si7QVrtZg8LEPQb0VVhiLRUslD2yLnXtnRzG035J/mZXQ==}
 
   '@capsizecss/unpack@4.0.1':
     resolution: {integrity: sha512-CuNiSqg7+e1cO/GjffyMOm5Tt2jUF9CWHHnvQ/UkqvtkGfHdgwEC0wpmq7fkN3gxwpRnrAN0WzO3vREKmNolMQ==}
@@ -1749,6 +1773,9 @@ packages:
     engines: {node: '>= 10'}
     hasBin: true
 
+  '@tauri-apps/plugin-dialog@2.7.1':
+    resolution: {integrity: sha512-OK1UBXYt+ojcmxMktzzuyonYIFta8CmAASpX+CA+DTGK24KlHjhYI6x2iOJ/TjZF4N7/ACK1oFmEOjIY9IhzOQ==}
+
   '@tauri-apps/plugin-shell@2.3.5':
     resolution: {integrity: sha512-jewtULhiQ7lI7+owCKAjc8tYLJr92U16bPOeAa472LHJdgaibLP83NcfAF2e+wkEcA53FxKQAZ7byDzs2eeizg==}
 
@@ -1972,11 +1999,23 @@ packages:
   '@tybys/wasm-util@0.10.2':
     resolution: {integrity: sha512-RoBvJ2X0wuKlWFIjrwffGw1IqZHKQqzIchKaadZZfnNpsAYp2mM0h36JtPCjNDAHGgYez/15uMBpfGwchhiMgg==}
 
+  '@types/bytebuffer@5.0.49':
+    resolution: {integrity: sha512-lV4YLiolMdD4upDmr4vnfiwV/FN9Jg33eNTSFMkHqyMKqTIAn5TmFTYsARwXwUXeFU7yzRpECmWV1SOhIvdkRQ==}
+
   '@types/estree@1.0.9':
     resolution: {integrity: sha512-GhdPgy1el4/ImP05X05Uw4cw2/M93BCUmnEvWZNStlCzEKME4Fkk+YpoA5OiHNQmoS7Cafb8Xa3Pya8m1Qrzeg==}
 
+  '@types/file-manager@2.0.3':
+    resolution: {integrity: sha512-gEq6de+iMbjmkL3Wj183JQ651h9b331wQ3svXp2K6RkgBg+TtiyIZTMols/a3UtXllVV9kSelz/N3Rgh0n6S4g==}
+
+  '@types/globaloffensive@2.3.4':
+    resolution: {integrity: sha512-EZXpLWLK1UoIlbAg+bgwIJ9s2ORw1NqKrnIU7ob8MtxwfoU7LVb6iVZNv6cKK/foQGh0ntlA6XLprgPOI9JwHg==}
+
   '@types/jsesc@2.5.1':
     resolution: {integrity: sha512-9VN+6yxLOPLOav+7PwjZbxiID2bVaeq0ED4qSQmdQTdjnXJSaCVKTR58t15oqH1H5t8Ng2ZX1SabJVoN9Q34bw==}
+
+  '@types/long@3.0.32':
+    resolution: {integrity: sha512-ZXyOOm83p7X8p3s0IYM3VeueNmHpkk/yMlP8CLeOnEcu6hIwPH7YjZBvhQkR0ZFS2DqZAxKtJ/M5fcuv3OU5BA==}
 
   '@types/long@4.0.2':
     resolution: {integrity: sha512-MqTGEo5bj5t157U6fA/BiDynNkn0YknVdh48CMPkTSpFTVmvao5UQmm7uEF6xBEo7qIMAlY/JSleYaE6VOdpaA==}
@@ -1986,6 +2025,18 @@ packages:
 
   '@types/resolve@1.20.2':
     resolution: {integrity: sha512-60BCwRFOZCQhDncwQdxxeOEEkbc5dIMccYLwbxsS4TUNeVECQ/pBJ0j09mrHOl/JJvpRPGwO9SvE4nR2Nb/a4Q==}
+
+  '@types/snappyjs@0.7.1':
+    resolution: {integrity: sha512-OxjzJ6cQZstysMh6PEwZWmK9qlKZyezHJKOkcUkZDooSFuog2votUEKkxMaTq51UQF3cJkXKQ+XGlj4FSl8JQQ==}
+
+  '@types/steam-totp@2.1.2':
+    resolution: {integrity: sha512-XNg9/PkSgbAVy58O3vgSermXU7YNJCX7Cmqx4aNE8CE6sI3m0vm7HBXgSj9eLJjEUfMP1vg64LKP65bj0Jpc5g==}
+
+  '@types/steam-user@5.1.1':
+    resolution: {integrity: sha512-jYAsDpp30eC+/EWwG9Ea2qyGuKBWsTXgl7qVUiAMP3YtsCJi4/rCj0w8W8167RdhrkY7FhSC0OScQt5fYK8cGQ==}
+
+  '@types/steamid@2.0.4':
+    resolution: {integrity: sha512-LC0oaiNq3gqMI18MV935CnlyHmDooKRszK56jHv0+b7EbJwf5k++YsD52zWeJUD8nuYqP9LpIgpXGiYBOxpcYQ==}
 
   '@types/unzipper@0.10.11':
     resolution: {integrity: sha512-D25im2zjyMCcgL9ag6N46+wbtJBnXIr7SI4zHf9eJD2Dw2tEB5e+p5MYkrxKIVRscs5QV0EhtU9rgXSPx90oJg==}
@@ -2496,6 +2547,9 @@ packages:
     peerDependenciesMeta:
       srvx:
         optional: true
+
+  csgo-protobuf@4.1.9:
+    resolution: {integrity: sha512-5OjV+LGK5nB0TT5MOUCyzsS1L4yuHJB66BMM3yC3D2OmQMXIg/9qptPz+vo6EDrymKc9xspT+aPqHmFYipwTtA==}
 
   csgo-sharecode@3.1.2:
     resolution: {integrity: sha512-uaSkf6jmAR4Iqn5Tavo7HWJ+epyaGUk1iiTkjh7v/E2CcrHrCglH4RUPF6qCN95Wv2G/aVZNqPUZJ5NOW3LSYw==}
@@ -4079,6 +4133,9 @@ packages:
     resolution: {integrity: sha512-RQsvleCbF8cVHEv+xuDGaA4pOizFqJ0GgjtMSRo6oP8pnN7WsigHgVGey6aILRBKv4W2YOMHLqbKdnB6hpB9fw==}
     engines: {node: '>=20.0.0'}
 
+  snappyjs@0.7.0:
+    resolution: {integrity: sha512-u5iEEXkMe2EInQio6Wv9LWHOQYRDbD2O9hzS27GpT/lwfIQhTCnHCTqedqHIHe9ZcvQo+9au6vngQayipz1NYw==}
+
   socks-proxy-agent@7.0.0:
     resolution: {integrity: sha512-Fgl0YPZ902wEsAyiQ+idGd1A7rSFx/ayC1CQVMw5P+EQx2V0SgpGtf6OKFhVjPflPUl9YMmEOnmfjCdMUsygww==}
     engines: {node: '>= 10'}
@@ -4950,6 +5007,8 @@ snapshots:
     optionalDependencies:
       cac: 6.7.14
       citty: 0.2.2
+
+  '@bufbuild/protobuf@2.11.0': {}
 
   '@capsizecss/unpack@4.0.1':
     dependencies:
@@ -6364,6 +6423,10 @@ snapshots:
       '@tauri-apps/cli-win32-ia32-msvc': 2.11.2
       '@tauri-apps/cli-win32-x64-msvc': 2.11.2
 
+  '@tauri-apps/plugin-dialog@2.7.1':
+    dependencies:
+      '@tauri-apps/api': 2.11.0
+
   '@tauri-apps/plugin-shell@2.3.5':
     dependencies:
       '@tauri-apps/api': 2.11.0
@@ -6598,9 +6661,26 @@ snapshots:
       tslib: 2.8.1
     optional: true
 
+  '@types/bytebuffer@5.0.49':
+    dependencies:
+      '@types/long': 3.0.32
+      '@types/node': 24.13.2
+
   '@types/estree@1.0.9': {}
 
+  '@types/file-manager@2.0.3':
+    dependencies:
+      '@types/node': 24.13.2
+
+  '@types/globaloffensive@2.3.4':
+    dependencies:
+      '@types/node': 24.13.2
+      '@types/steam-user': 5.1.1
+      '@types/steamid': 2.0.4
+
   '@types/jsesc@2.5.1': {}
+
+  '@types/long@3.0.32': {}
 
   '@types/long@4.0.2': {}
 
@@ -6609,6 +6689,21 @@ snapshots:
       undici-types: 7.18.2
 
   '@types/resolve@1.20.2': {}
+
+  '@types/snappyjs@0.7.1': {}
+
+  '@types/steam-totp@2.1.2':
+    dependencies:
+      '@types/node': 24.13.2
+
+  '@types/steam-user@5.1.1':
+    dependencies:
+      '@types/bytebuffer': 5.0.49
+      '@types/file-manager': 2.0.3
+      '@types/node': 24.13.2
+      '@types/steamid': 2.0.4
+
+  '@types/steamid@2.0.4': {}
 
   '@types/unzipper@0.10.11':
     dependencies:
@@ -7135,6 +7230,10 @@ snapshots:
   crossws@0.4.6(srvx@0.11.16):
     optionalDependencies:
       srvx: 0.11.16
+
+  csgo-protobuf@4.1.9:
+    dependencies:
+      '@bufbuild/protobuf': 2.11.0
 
   csgo-sharecode@3.1.2: {}
 
@@ -9023,6 +9122,8 @@ snapshots:
   smart-buffer@4.2.0: {}
 
   smob@1.6.2: {}
+
+  snappyjs@0.7.0: {}
 
   socks-proxy-agent@7.0.0:
     dependencies:

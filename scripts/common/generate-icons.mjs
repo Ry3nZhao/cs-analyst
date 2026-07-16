@@ -5,10 +5,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { root } from '../lib/paths.mjs';
 
-const iconsDir = path.join(root, 'crates', 'tauri-app', 'src-tauri', 'icons');
+const iconsDir = path.join(root, 'src', 'tauri', 'src-tauri', 'icons');
 const b64Path = path.join(iconsDir, 'icon.png.b64');
 const pngPath = path.join(iconsDir, 'icon.png');
-const tauriApp = path.join(root, 'crates', 'tauri-app');
+const tauriApp = path.join(root, 'src', 'tauri');
 
 const REQUIRED_BUNDLE_ICONS = [
   '32x32.png',

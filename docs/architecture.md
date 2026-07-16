@@ -24,7 +24,7 @@
 ## 仓库结构
 
 ```
-cs-demo-analyst/
+cs-analyst/
 ├── apps/desktop/          # Nuxt 4 SPA (@nuxt/ui)
 ├── packages/
 │   ├── sidecar/           # JSON-RPC 下载引擎

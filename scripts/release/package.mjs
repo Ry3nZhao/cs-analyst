@@ -15,7 +15,7 @@ runPnpm(['generate-icons'], { label: 'Release: generate icons' });
 runPnpm(['build'], { label: 'Release: build frontend and sidecar sources' });
 runPnpm(['build:sidecar'], { label: 'Release: bundle sidecar resources' });
 runPnpm(['sync-version'], { label: 'Release: sync version' });
-runPnpm(['--filter', '@cs-demo-analyst/tauri-app', 'tauri', 'build'], { label: 'Release: tauri build' });
+runPnpm(['--filter', '@cs-analyst/tauri-app', 'tauri', 'build'], { label: 'Release: tauri build' });
 
 writeStamp(path.join(buildReleaseDir, platformStamp('package-step')), {
   job: 'package',

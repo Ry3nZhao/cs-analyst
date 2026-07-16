@@ -88,8 +88,8 @@ function scanForVcvars() {
 }
 
 function findVcvars() {
-  if (process.env.CS_DEMO_ANALYST_VCVARS) {
-    return process.env.CS_DEMO_ANALYST_VCVARS;
+  if (process.env.CS_ANALYST_VCVARS) {
+    return process.env.CS_ANALYST_VCVARS;
   }
   return vswhereVcvars() || scanForVcvars();
 }
@@ -118,7 +118,7 @@ export function msvcEnv() {
   if (!vcvars) {
     console.warn(
       '[msvc] Could not locate vcvars64.bat. If cargo fails with "linker `link.exe` not found", ' +
-        'set CS_DEMO_ANALYST_VCVARS to its full path or run from a Developer PowerShell.',
+        'set CS_ANALYST_VCVARS to its full path or run from a Developer PowerShell.',
     );
     cached = {};
     return cached;

@@ -40,10 +40,10 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build shared-types
-        run: pnpm --filter @cs-demo-analyst/shared-types build
+        run: pnpm --filter @cs-analyst/shared-types build
 
       - name: Build sidecar
-        run: pnpm --filter @cs-demo-analyst/sidecar build
+        run: pnpm --filter @cs-analyst/sidecar build
 
   frontend:
     name: Nuxt generate
@@ -66,7 +66,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Generate frontend
-        run: pnpm --filter @cs-demo-analyst/desktop generate
+        run: pnpm --filter @cs-analyst/desktop generate
 
   rust:
     name: Rust check
@@ -95,16 +95,16 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build shared-types and sidecar
-        run: pnpm --filter @cs-demo-analyst/shared-types build && pnpm --filter @cs-demo-analyst/sidecar build
+        run: pnpm --filter @cs-analyst/shared-types build && pnpm --filter @cs-analyst/sidecar build
 
       - name: Bundle sidecar resources
         run: pnpm build:sidecar
 
       - name: Verify sidecar resources
-        run: test -f crates/tauri-app/src-tauri/resources/sidecar/index.js
+        run: test -f src/tauri/src-tauri/resources/sidecar/index.js
 
       - name: Generate frontend
-        run: pnpm --filter @cs-demo-analyst/desktop generate
+        run: pnpm --filter @cs-analyst/desktop generate
 
       - name: Generate app icons
         run: pnpm generate-icons
@@ -115,8 +115,8 @@ jobs:
       - name: Rust cache
         uses: swatinem/rust-cache@v2.9.1
         with:
-          workspaces: crates/tauri-app/src-tauri
+          workspaces: src/tauri/src-tauri
 
       - name: Cargo check
-        working-directory: crates/tauri-app/src-tauri
+        working-directory: src/tauri/src-tauri
         run: cargo check --timings

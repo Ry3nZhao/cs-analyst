@@ -8,13 +8,13 @@ import {
 } from '../lib/paths.mjs';
 import { assertFile, runCargo, runPnpm, writeStamp } from '../lib/run.mjs';
 
-runPnpm(['--filter', '@cs-demo-analyst/shared-types', 'build'], { label: 'Validate: shared-types' });
-runPnpm(['--filter', '@cs-demo-analyst/sidecar', 'build'], { label: 'Validate: sidecar' });
+runPnpm(['--filter', '@cs-analyst/shared-types', 'build'], { label: 'Validate: shared-types' });
+runPnpm(['--filter', '@cs-analyst/sidecar', 'build'], { label: 'Validate: sidecar' });
 runPnpm(['build:sidecar'], { label: 'Validate: bundle sidecar' });
 
 assertFile(sidecarResourceIndex);
 
-runPnpm(['--filter', '@cs-demo-analyst/desktop', 'generate'], { label: 'Validate: nuxt generate' });
+runPnpm(['--filter', '@cs-analyst/desktop', 'generate'], { label: 'Validate: nuxt generate' });
 runPnpm(['generate-icons'], { label: 'Validate: generate icons' });
 
 runCargo(['check', '--timings'], {

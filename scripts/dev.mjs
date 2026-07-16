@@ -8,7 +8,7 @@ import { resolveCargoCommand } from './lib/run.mjs';
 
 const node = process.execPath;
 const pnpm = path.join(path.dirname(node), process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm');
-const tauriAppDir = path.join(root, 'crates', 'tauri-app');
+const tauriAppDir = path.join(root, 'src', 'tauri');
 
 function run(cmd, args, cwd) {
   return new Promise((resolve, reject) => {
@@ -18,8 +18,8 @@ function run(cmd, args, cwd) {
 }
 
 async function main() {
-  await run(pnpm, ['--filter', '@cs-demo-analyst/shared-types', 'build'], root);
-  await run(pnpm, ['--filter', '@cs-demo-analyst/sidecar', 'build'], root);
+  await run(pnpm, ['--filter', '@cs-analyst/shared-types', 'build'], root);
+  await run(pnpm, ['--filter', '@cs-analyst/sidecar', 'build'], root);
 
   const cargo = resolveCargoCommand();
   const tauri = spawn(cargo, ['tauri', 'dev'], {

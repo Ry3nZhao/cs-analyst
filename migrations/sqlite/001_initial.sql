@@ -1,13 +1,12 @@
--- CS Demo Analyst initial schema
+-- CS Analyst initial schema (migration 001)
 
 CREATE TABLE IF NOT EXISTS app_settings (
   id INTEGER PRIMARY KEY CHECK (id = 1),
   data_root TEXT NOT NULL DEFAULT './',
-  global_max_concurrent INTEGER NOT NULL DEFAULT 3,
-  auto_discover_on_startup INTEGER NOT NULL DEFAULT 1,
+  global_max_concurrent INTEGER NOT NULL DEFAULT 1,
+  auto_discover_on_startup INTEGER NOT NULL DEFAULT 0,
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
-
 INSERT INTO app_settings (id) SELECT 1 WHERE NOT EXISTS (SELECT 1 FROM app_settings WHERE id = 1);
 
 CREATE TABLE IF NOT EXISTS platform_settings (
@@ -20,7 +19,6 @@ CREATE TABLE IF NOT EXISTS platform_settings (
   max_auto_attempts INTEGER,
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
-
 INSERT INTO platform_settings (platform) SELECT 'valve' WHERE NOT EXISTS (SELECT 1 FROM platform_settings WHERE platform = 'valve');
 INSERT INTO platform_settings (platform) SELECT 'renown' WHERE NOT EXISTS (SELECT 1 FROM platform_settings WHERE platform = 'renown');
 INSERT INTO platform_settings (platform) SELECT '5eplay' WHERE NOT EXISTS (SELECT 1 FROM platform_settings WHERE platform = '5eplay');
@@ -53,17 +51,17 @@ CREATE TABLE IF NOT EXISTS valve_bot_config (
   password_enc TEXT,
   secret_enc TEXT,
   steam_api_key_enc TEXT,
+  refresh_token_enc TEXT,
   cron_schedule TEXT NOT NULL DEFAULT '0 * * * *',
   run_on_startup INTEGER NOT NULL DEFAULT 1,
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
-
 INSERT INTO valve_bot_config (id) SELECT 1 WHERE NOT EXISTS (SELECT 1 FROM valve_bot_config WHERE id = 1);
 
-CREATE TABLE IF NOT EXISTS discovered_matches (
+CREATE TABLE IF NOT EXISTS matches (
   id TEXT PRIMARY KEY,
-  platform TEXT NOT NULL CHECK (platform IN ('valve', 'renown', '5eplay')),
-  sub_account_id TEXT NOT NULL REFERENCES sub_accounts(id),
+  platform TEXT NOT NULL CHECK (platform IN ('valve', 'renown', '5eplay', 'imported')),
+  sub_account_id TEXT REFERENCES sub_accounts(id),
   match_id TEXT NOT NULL,
   share_code TEXT,
   demo_url TEXT,
@@ -71,43 +69,44 @@ CREATE TABLE IF NOT EXISTS discovered_matches (
   played_at TEXT,
   valve_channel TEXT CHECK (valve_channel IN ('local', 'authcode')),
   raw_payload TEXT NOT NULL DEFAULT '{}',
-  discovered_at TEXT NOT NULL DEFAULT (datetime('now')),
-  UNIQUE(platform, match_id)
-);
-
-CREATE INDEX IF NOT EXISTS idx_discovered_matches_share_code ON discovered_matches(share_code);
-
-CREATE TABLE IF NOT EXISTS download_jobs (
-  id TEXT PRIMARY KEY,
-  discovered_match_id TEXT NOT NULL UNIQUE REFERENCES discovered_matches(id),
-  status TEXT NOT NULL DEFAULT 'discovered' CHECK (status IN (
-    'discovered', 'queued', 'downloading', 'completed',
-    'failed', 'skipped', 'expired'
+  duration_seconds INTEGER,
+  game_mode TEXT,
+  game_type INTEGER,
+  demo_file_stamp TEXT,
+  network_protocol INTEGER,
+  server_name TEXT,
+  client_name TEXT,
+  game_directory TEXT,
+  fullpackets_version INTEGER,
+  allow_clientside_entities INTEGER,
+  demo_header_field_9 INTEGER,
+  demo_header_field_10 TEXT,
+  demo_version_name TEXT,
+  demo_version_guid TEXT,
+  playback_time REAL,
+  playback_ticks INTEGER,
+  playback_frames INTEGER,
+  dem_game_info TEXT,
+  status TEXT NOT NULL DEFAULT 'queued' CHECK (status IN (
+    'queued', 'downloading', 'completed', 'failed', 'skipped', 'expired'
   )),
   progress REAL NOT NULL DEFAULT 0.0,
   priority INTEGER NOT NULL DEFAULT 0,
   attempts INTEGER NOT NULL DEFAULT 0,
   last_error TEXT,
   failed_at TEXT,
-  queued_at TEXT,
+  queued_at TEXT NOT NULL DEFAULT (datetime('now')),
   started_at TEXT,
-  finished_at TEXT
-);
-
-CREATE TABLE IF NOT EXISTS demos (
-  id TEXT PRIMARY KEY,
-  platform TEXT NOT NULL CHECK (platform IN ('valve', 'renown', '5eplay')),
-  sub_account_id TEXT NOT NULL REFERENCES sub_accounts(id),
-  match_id TEXT NOT NULL,
-  share_code TEXT,
-  file_path TEXT NOT NULL UNIQUE,
-  file_name TEXT NOT NULL,
+  finished_at TEXT,
+  file_path TEXT UNIQUE,
+  file_name TEXT,
   file_size INTEGER,
   checksum TEXT,
-  valve_channel TEXT CHECK (valve_channel IN ('local', 'authcode')),
-  downloaded_at TEXT NOT NULL DEFAULT (datetime('now')),
+  discovered_at TEXT NOT NULL DEFAULT (datetime('now')),
   UNIQUE(platform, match_id)
 );
+
+CREATE INDEX IF NOT EXISTS idx_matches_share_code ON matches(share_code);
 
 CREATE TABLE IF NOT EXISTS sync_cursors (
   sub_account_id TEXT PRIMARY KEY REFERENCES sub_accounts(id),
@@ -115,27 +114,3 @@ CREATE TABLE IF NOT EXISTS sync_cursors (
   cursor_value TEXT NOT NULL,
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
-
-DROP VIEW IF EXISTS v_download_dashboard;
-CREATE VIEW v_download_dashboard AS
-SELECT
-  j.id AS job_id,
-  j.status,
-  j.progress,
-  j.attempts,
-  j.last_error,
-  dm.platform,
-  dm.match_id,
-  dm.map_name,
-  dm.played_at,
-  dm.valve_channel,
-  dm.share_code,
-  dm.demo_url,
-  u.id AS user_id,
-  u.display_name AS user_name,
-  sa.display_name AS account_name,
-  sa.external_id AS account_id
-FROM download_jobs j
-JOIN discovered_matches dm ON dm.id = j.discovered_match_id
-JOIN sub_accounts sa ON sa.id = dm.sub_account_id
-JOIN users u ON u.id = sa.user_id;

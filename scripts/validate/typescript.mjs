@@ -3,8 +3,8 @@ import path from 'node:path';
 import { buildValidateDir } from '../lib/paths.mjs';
 import { runPnpm, writeStamp } from '../lib/run.mjs';
 
-runPnpm(['--filter', '@cs-demo-analyst/shared-types', 'build'], { label: 'Validate: shared-types' });
-runPnpm(['--filter', '@cs-demo-analyst/sidecar', 'build'], { label: 'Validate: sidecar' });
+runPnpm(['--filter', '@cs-analyst/shared-types', 'build'], { label: 'Validate: shared-types' });
+runPnpm(['--filter', '@cs-analyst/sidecar', 'build'], { label: 'Validate: sidecar' });
 
 writeStamp(path.join(buildValidateDir, 'typescript.json'), {
   job: 'typescript',

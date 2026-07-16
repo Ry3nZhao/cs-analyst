@@ -1,7 +1,7 @@
 {
-  "name": "cs-demo-analyst",
+  "name": "cs-analyst",
   "private": true,
-  "version": "0.1.1",
+  "version": "0.1.2",
   "scripts": {
     "dev": "node ./scripts/dev.mjs",
     "validate": "node ./scripts/validate/index.mjs",
@@ -11,7 +11,7 @@
     "release": "node ./scripts/release/index.mjs",
     "release:package": "node ./scripts/release/package.mjs",
     "release:collect": "node ./scripts/release/collect.mjs",
-    "build": "pnpm --filter @cs-demo-analyst/shared-types build && pnpm --filter @cs-demo-analyst/sidecar build && pnpm --filter @cs-demo-analyst/desktop generate",
+    "build": "pnpm --filter @cs-analyst/shared-types build && pnpm --filter @cs-analyst/sidecar build && pnpm --filter @cs-analyst/desktop generate",
     "build:sidecar": "node ./scripts/common/bundle-sidecar.mjs",
     "sync-version": "node ./scripts/common/sync-version.mjs",
     "generate-icons": "node ./scripts/common/generate-icons.mjs",

@@ -1,4 +1,4 @@
-# CS Demo Analyst — 本地开发与一键测试
+# CS Analyst — 本地开发与一键测试
 #
 # 用法:
 #   just          列出所有命令
@@ -7,13 +7,13 @@
 
 set windows-shell := ["powershell.exe", "-NoProfile", "-Command"]
 
-# 已安装应用的本地数据目录（Tauri identifier: com.cs-demo-analyst.app）
-app-data := "C:/Users/<user>/AppData/Local/com.cs-demo-analyst.app"
+# 已安装应用的本地数据目录（Tauri identifier: com.cs-analyst.app）
+app-data := "C:/Users/<user>/AppData/Local/com.cs-analyst.app"
 
 root := justfile_directory()
-tauri-app := root / "crates/tauri-app"
-debug-exe := root / "crates/tauri-app/src-tauri/target/debug/cs-demo-analyst.exe"
-release-exe := root / "crates/tauri-app/src-tauri/target/release/cs-demo-analyst.exe"
+tauri-app := root / "src/tauri"
+debug-exe := root / "src/tauri/src-tauri/target/debug/cs-analyst.exe"
+release-exe := root / "src/tauri/src-tauri/target/release/cs-analyst.exe"
 
 default:
     @just --list
@@ -42,23 +42,24 @@ install:
 
 # 构建前置：shared-types、sidecar 与 Tauri resources
 prep:
-    pnpm --filter @cs-demo-analyst/shared-types build
-    pnpm --filter @cs-demo-analyst/sidecar build
+    pnpm --filter @cs-analyst/shared-types build
+    pnpm --filter @cs-analyst/sidecar build
     pnpm build:sidecar
 
 # Debug 构建（无 NSIS 安装包，速度较快）
 build-debug: prep
-    pnpm --filter @cs-demo-analyst/tauri-app tauri build --debug --no-bundle
+    pnpm --filter @cs-analyst/tauri-app tauri build --debug --no-bundle
 
 # Release 完整构建（含图标、前端 generate、NSIS 等）
 build-release:
     pnpm package
 
-# 启动 debug 构建产物（数据目录见 app-data）
+# 启动 debug 构建产物（数据目录见 app-data；前台运行，前端/Rust 日志输出到本终端）
 run-debug:
     if (-not (Test-Path '{{debug-exe}}')) { throw "未找到 {{debug-exe}}，请先运行: just build-debug" }
     Write-Host "数据目录: {{app-data}}"
-    Start-Process '{{debug-exe}}'
+    Write-Host "启动应用（日志输出于本终端，关闭窗口或 Ctrl+C 结束）..."
+    & '{{debug-exe}}'
 
 # 启动 release 构建产物
 run-release:
