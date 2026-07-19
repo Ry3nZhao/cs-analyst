@@ -57,17 +57,9 @@ export async function resolveValveAuthcodeUrls(
   const { client: steamUser, refreshToken } = await loginSteamClient(bot);
 
   try {
-    const waitForGame = promiseTimeout(
-      new Promise<void>((resolve) => {
-        steamUser.once('appLaunched', (id: number) => {
-          if (id === 730) resolve();
-        });
-      }),
-      { milliseconds: 30000, message: 'Timed out waiting for game to launch' },
-    );
-    steamUser.gamesPlayed(730, true);
-    await waitForGame;
-
+    // globaloffensive 只在收到 appLaunched 事件时才发起 GC 握手，所以实例必须在
+    // gamesPlayed() 之前创建；否则事件早已错过，GC 会话永远建立不起来，
+    // 之后每个 requestGame 都石沉大海直到超时（表现为「能发现对局但拿不到 demo URL」）。
     const csgo = new GlobalOffensive(steamUser);
     const pendingMatchResponses = new Map<string, MatchRespFn>();
     csgo.on('matchList', (matches) => {
@@ -79,6 +71,20 @@ export async function resolveValveAuthcodeUrls(
         }
       });
     });
+
+    // 等 GC 真正握手完成，而不是只等游戏启动
+    const waitForGC = promiseTimeout(
+      new Promise<void>((resolve) => {
+        if (csgo.haveGCSession) {
+          resolve();
+          return;
+        }
+        csgo.once('connectedToGC', () => resolve());
+      }),
+      { milliseconds: 60000, message: '等待 Steam 游戏协调器 (GC) 连接超时' },
+    );
+    steamUser.gamesPlayed(730, true);
+    await waitForGC;
 
     emitResolveBatch(emit, { total, completed: 0, phase: 'resolving' });
 

@@ -630,9 +630,11 @@ pub fn requeue_failed_jobs(db: &Database, platform: &str) -> Result<usize> {
         .map(|m| format!("AND attempts < {m}"))
         .unwrap_or_default();
 
+    // 只自动重试 'failed'：'expired' 表示 demo 已被 Valve 删除，重试永远不会成功，
+    // 自动重排会让队列无限空转（用户手动点「重试」仍可强制排队）
     let sql = format!(
         "UPDATE matches SET status = 'queued', last_error = NULL, failed_at = NULL, queued_at = CURRENT_TIMESTAMP
-         WHERE platform = ? AND status IN ('failed','expired') {max_clause}"
+         WHERE platform = ? AND status = 'failed' {max_clause}"
     );
     Ok(db.conn.execute(&sql, params![platform])?)
 }

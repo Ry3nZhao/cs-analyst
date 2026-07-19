@@ -1251,6 +1251,7 @@ impl DownloadOrchestrator {
             );
 
             let mut failed_in_batch = 0usize;
+            let mut spawned_in_batch = 0usize;
             std::thread::scope(|scope| {
                 let mut handles = Vec::with_capacity(batch_size);
                 for (id, platform, match_id, demo_url, share_code, valve_channel) in jobs {
@@ -1261,12 +1262,22 @@ impl DownloadOrchestrator {
                         && valve_channel.as_deref() == Some("authcode")
                         && demo_url.as_ref().is_none_or(|u| u.is_empty())
                     {
+                        // 不能留在 queued，否则 count_queued_jobs 永远不为 0，本循环死转
                         self.append_log(
                             app,
-                            format!("skip job {id}: valve authcode missing demo_url after resolve"),
+                            format!("job {id}: valve authcode missing demo_url after resolve, marking failed"),
+                        );
+                        let db = self.db.lock();
+                        let _ = repo::update_job_status(
+                            &db,
+                            &id,
+                            "failed",
+                            None,
+                            Some("缺少 demo URL：解析未完成或需要重新发现"),
                         );
                         continue;
                     }
+                    spawned_in_batch += 1;
                     let app = app.clone();
                     handles.push(scope.spawn(move || {
                         self.run_download(
@@ -1299,6 +1310,19 @@ impl DownloadOrchestrator {
             });
             if failed_in_batch > 0 {
                 self.append_log(app, format!("process_queue: {failed_in_batch} job(s) failed in this batch, continuing"));
+            }
+            if spawned_in_batch == 0 {
+                let now_remaining = {
+                    let db = self.db.lock();
+                    repo::count_queued_jobs(&db)?
+                };
+                if now_remaining >= remaining {
+                    self.append_log(
+                        app,
+                        "process_queue: batch made no progress, stopping to avoid busy loop",
+                    );
+                    break;
+                }
             }
         }
         Ok(())

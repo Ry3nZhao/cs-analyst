@@ -16,9 +16,11 @@ declare module 'globaloffensive' {
 
   export default class GlobalOffensive extends EventEmitter {
     constructor(steamUser: unknown);
+    readonly haveGCSession: boolean;
     requestGame(shareCode: string): void;
     on(event: 'matchList', listener: (matches: GcMatch[]) => void): this;
     on(event: 'connectedToGC', listener: () => void): this;
+    once(event: 'connectedToGC', listener: () => void): this;
   }
 }
 

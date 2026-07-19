@@ -32,15 +32,86 @@ pub struct Database {
 
 impl Database {
     pub fn open(data_root: PathBuf) -> Result<Self> {
+        eprintln!("[db] data_root = {}", data_root.display());
         fs::create_dir_all(data_root.join("db"))?;
         fs::create_dir_all(data_root.join("demos"))?;
         fs::create_dir_all(data_root.join("state"))?;
         let db_path = data_root.join("db").join("analyst.db");
-        let conn = Connection::open(&db_path)?;
+        let mut conn = Connection::open(&db_path)?;
+        let mut legacy_path: Option<PathBuf> = None;
+        if Self::is_legacy_schema(&conn)? {
+            // v0.1.x 的库 user_version=1 但表结构完全不同（discovered_matches/download_jobs），
+            // 无法原地迁移：归档旧文件后重建，再从归档中带回配置数据
+            drop(conn);
+            legacy_path = Some(Self::archive_legacy_db(&db_path)?);
+            conn = Connection::open(&db_path)?;
+        }
         conn.execute_batch("PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;")?;
         let db = Self { conn, data_root };
         db.migrate()?;
+        if let Some(ref legacy) = legacy_path {
+            db.import_legacy_config(legacy)?;
+        }
         Ok(db)
+    }
+
+    fn is_legacy_schema(conn: &Connection) -> Result<bool> {
+        let version: i32 = conn.query_row("PRAGMA user_version", [], |r| r.get(0))?;
+        if version == 0 {
+            return Ok(false);
+        }
+        let has_matches: bool = conn.query_row(
+            "SELECT EXISTS(SELECT 1 FROM sqlite_master WHERE type='table' AND name='matches')",
+            [],
+            |r| r.get(0),
+        )?;
+        if !has_matches {
+            eprintln!("[db] detected legacy schema (user_version={version}), archiving");
+        }
+        Ok(!has_matches)
+    }
+
+    fn archive_legacy_db(db_path: &Path) -> Result<PathBuf> {
+        let dir = db_path
+            .parent()
+            .ok_or_else(|| DbError::Message("db path has no parent".into()))?;
+        // 归档名保持 <base>-wal/<base>-shm 约定，SQLite 重新打开归档库时才能恢复 WAL 数据
+        let archived = dir.join("analyst.legacy.db");
+        for suffix in ["", "-wal", "-shm"] {
+            let src = PathBuf::from(format!("{}{suffix}", db_path.display()));
+            if src.exists() {
+                let dest = PathBuf::from(format!("{}{suffix}", archived.display()));
+                if dest.exists() {
+                    fs::remove_file(&dest)?;
+                }
+                fs::rename(&src, &dest)?;
+            }
+        }
+        Ok(archived)
+    }
+
+    /// 从归档的 v0.1.x 库中带回配置类数据（users/sub_accounts/settings/bot 凭据）。
+    /// 对局与下载任务表结构差异过大，不迁移（重新 discover 即可）。
+    fn import_legacy_config(&self, legacy_db: &Path) -> Result<()> {
+        let path = legacy_db.to_string_lossy().replace('\'', "''");
+        self.conn.execute_batch(&format!(
+            "ATTACH DATABASE '{path}' AS legacy;
+             INSERT OR IGNORE INTO users SELECT * FROM legacy.users;
+             INSERT OR IGNORE INTO sub_accounts SELECT * FROM legacy.sub_accounts;
+             INSERT OR IGNORE INTO sync_cursors SELECT * FROM legacy.sync_cursors;
+             INSERT OR REPLACE INTO platform_settings SELECT * FROM legacy.platform_settings;
+             INSERT OR REPLACE INTO app_settings SELECT * FROM legacy.app_settings;
+             UPDATE valve_bot_config SET
+               username = (SELECT username FROM legacy.valve_bot_config WHERE id = 1),
+               password_enc = (SELECT password_enc FROM legacy.valve_bot_config WHERE id = 1),
+               secret_enc = (SELECT secret_enc FROM legacy.valve_bot_config WHERE id = 1),
+               steam_api_key_enc = (SELECT steam_api_key_enc FROM legacy.valve_bot_config WHERE id = 1),
+               cron_schedule = COALESCE((SELECT cron_schedule FROM legacy.valve_bot_config WHERE id = 1), cron_schedule),
+               run_on_startup = COALESCE((SELECT run_on_startup FROM legacy.valve_bot_config WHERE id = 1), run_on_startup)
+             WHERE id = 1 AND EXISTS (SELECT 1 FROM legacy.valve_bot_config WHERE id = 1);
+             DETACH DATABASE legacy;"
+        ))?;
+        Ok(())
     }
 
     fn migrate(&self) -> Result<()> {
