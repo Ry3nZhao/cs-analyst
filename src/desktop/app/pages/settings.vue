@@ -1,7 +1,7 @@
 <template>
   <div class="settings-page">
     <!-- Storage -->
-    <div class="card">
+    <div class="card card-pad">
       <div class="card-title">数据目录</div>
       <div class="card-desc">
         Demo、数据库与运行状态的实际存储位置（应用本地数据目录，不可在此修改）。
@@ -9,16 +9,16 @@
       <div class="row-input">
         <input
           :value="settings.dataRoot"
-          class="field-input flex-1 field-readonly"
+          class="input flex-1"
           readonly
           title="数据目录"
         />
-        <button class="btn-ghost" type="button" @click="openDataRoot">打开目录</button>
+        <button class="btn" type="button" @click="openDataRoot">打开目录</button>
       </div>
     </div>
 
     <!-- Scheduling -->
-    <div class="card">
+    <div class="card card-pad">
       <div class="card-title">调度设置</div>
       <div class="setting-row">
         <div class="setting-info">
@@ -30,7 +30,7 @@
           type="number"
           min="1"
           max="10"
-          class="num-input"
+          class="input num-input"
           @change="save"
         />
       </div>
@@ -40,7 +40,7 @@
           <span class="setting-desc">应用启动后立即执行一次 Demo 发现</span>
         </div>
         <button
-          class="toggle-btn"
+          class="toggle"
           :class="{ on: settings.autoDiscoverOnStartup }"
           @click="settings.autoDiscoverOnStartup = !settings.autoDiscoverOnStartup; save()"
         >
@@ -50,7 +50,7 @@
     </div>
 
     <!-- Valve Bot (Auth Code) -->
-    <div class="card">
+    <div class="card card-pad">
       <div class="card-title">Valve Bot 账号</div>
       <div class="card-desc">
         Auth Code 通道用于发现对局；下载 demo 需 Bot 账号登录 Steam 解析分享码。
@@ -59,7 +59,7 @@
       <div class="bot-form">
         <div class="field">
           <label class="field-label">username</label>
-          <input v-model="valveBot.username" class="field-input" placeholder="bot_account_name" />
+          <input v-model="valveBot.username" class="input" placeholder="bot_account_name" />
         </div>
         <div class="field">
           <label class="field-label">
@@ -69,7 +69,7 @@
           <input
             v-model="valveBotPassword"
             type="password"
-            class="field-input"
+            class="input"
             autocomplete="new-password"
             placeholder="留空则不修改"
           />
@@ -82,7 +82,7 @@
           <input
             v-model="valveBotSecret"
             type="password"
-            class="field-input"
+            class="input"
             autocomplete="new-password"
             placeholder="Steam Guard 共享密钥，可选"
           />
@@ -91,7 +91,7 @@
           <label class="field-label">API_key</label>
           <input
             v-model="valveBot.steamApiKey"
-            class="field-input"
+            class="input"
             placeholder="Steam Web API Key"
           />
         </div>
@@ -99,13 +99,13 @@
           <button class="btn-primary" :disabled="valveBotSaving" @click="saveValveBot">
             {{ valveBotSaving ? '保存中…' : '保存 Bot 配置' }}
           </button>
-          <span v-if="valveBotSaved" class="save-ok">已保存</span>
+          <StatusChip v-if="valveBotSaved" tone="success" label="已保存" />
         </div>
       </div>
     </div>
 
     <!-- Platform settings -->
-    <div class="card">
+    <div class="card card-pad">
       <div class="card-title">平台重试策略</div>
       <div
         v-for="(p, i) in platforms"
@@ -119,7 +119,7 @@
             <span class="setting-name">失败时自动重试</span>
           </div>
           <button
-            class="toggle-btn"
+            class="toggle"
             :class="{ on: p.autoRetryFailed }"
             @click="p.autoRetryFailed = !p.autoRetryFailed; savePlatform(p)"
           >
@@ -136,7 +136,7 @@
             type="number"
             min="1"
             placeholder="∞"
-            class="num-input"
+            class="input num-input"
             @change="savePlatform(p)"
           />
         </div>
@@ -144,22 +144,22 @@
     </div>
 
     <!-- Background task logs -->
-    <div class="card">
+    <div class="card card-pad">
       <div class="card-title">后台任务日志</div>
       <div class="card-desc">查看发现与下载任务的运行日志。</div>
-      <button class="btn-ghost" type="button" @click="logOpen = true">查看日志</button>
+      <button class="btn" type="button" @click="logOpen = true">查看日志</button>
     </div>
 
     <!-- About -->
-    <div class="card card-about">
+    <div class="card card-pad card-about">
       <div class="about-row">
         <div>
           <div class="card-title">CS Analyst</div>
           <div class="card-desc">版本 {{ appVersion }} · 自动发现并下载 CS2 Demo 文件</div>
         </div>
         <div class="about-actions">
-          <button class="btn-ghost" @click="openDb">数据库目录</button>
-          <button class="btn-ghost" @click="openLogs">日志目录</button>
+          <button class="btn" @click="openDb">数据库目录</button>
+          <button class="btn" @click="openLogs">日志目录</button>
         </div>
       </div>
     </div>
@@ -273,140 +273,54 @@ onMounted(async () => {
 
 <style scoped>
 .settings-page {
-  max-width: 640px;
+  max-width: 680px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: var(--space-3);
 }
 
-.card {
-  background: var(--c-surface);
-  border: 1px solid var(--c-border);
-  border-radius: 12px;
-  padding: 18px 20px;
-}
-.card-title { font-size: 13px; font-weight: 600; color: #fff; margin-bottom: 3px; }
-.card-desc  { font-size: 11px; color: var(--c-text-3); margin-bottom: 14px; }
+.card-title { font-size: var(--text-md); font-weight: 600; color: var(--text); margin-bottom: 2px; }
+.card-desc  { font-size: var(--text-xs); color: var(--text-3); margin-bottom: var(--space-3); line-height: 1.5; }
+.card-title + .setting-row,
+.card-title + .platform-section { margin-top: var(--space-2); }
 
-.bot-form { display: flex; flex-direction: column; gap: 12px; }
-.field { display: flex; flex-direction: column; gap: 5px; }
-.field-label { font-size: 11px; color: var(--c-text-3); }
-.field-hint { color: var(--c-text-faint); font-weight: 400; margin-left: 4px; }
-.bot-actions { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
-.save-ok { font-size: 12px; color: var(--c-success); }
+.bot-form { display: flex; flex-direction: column; gap: var(--space-3); }
+.bot-form .field-hint { display: inline; margin-left: var(--space-1); }
+.bot-actions { display: flex; align-items: center; gap: var(--space-3); margin-top: var(--space-1); }
 
-.row-input { display: flex; gap: 8px; align-items: center; }
-.field-input {
-  padding: 8px 10px;
-  border-radius: 7px;
-  border: 1px solid var(--c-border);
-  background: var(--c-card);
-  color: var(--c-text);
-  font-size: 13px;
-  outline: none;
-  min-width: 0;
-}
-.field-input:focus { border-color: var(--c-accent); }
-.field-input::placeholder { color: var(--c-text-faint); }
-.field-readonly {
-  color: var(--c-text-2);
-  cursor: default;
-}
+.row-input { display: flex; gap: var(--space-2); align-items: center; }
 .flex-1 { flex: 1; }
 
 .setting-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--c-border-sub);
+  gap: var(--space-4);
+  min-height: 44px;
+  border-bottom: 1px solid var(--border-subtle);
 }
-.setting-row:last-child, .setting-row.sub:last-child { border-bottom: none; }
+.setting-row:last-child { border-bottom: none; }
 .setting-info { display: flex; flex-direction: column; gap: 2px; }
-.setting-name { font-size: 12px; color: var(--c-text); }
-.setting-desc { font-size: 11px; color: var(--c-text-3); }
+.setting-name { font-size: var(--text-sm); color: var(--text); }
+.setting-desc { font-size: var(--text-xs); color: var(--text-3); }
 
-.num-input {
-  width: 64px;
-  padding: 6px 8px;
-  border-radius: 6px;
-  border: 1px solid var(--c-border);
-  background: var(--c-card);
-  color: var(--c-text);
-  font-size: 13px;
-  text-align: center;
-  outline: none;
-}
-.num-input:focus { border-color: var(--c-accent); }
+.num-input { width: 64px; text-align: center; }
 
-/* Toggle */
-.toggle-btn {
-  position: relative;
-  width: 34px;
-  height: 18px;
-  border-radius: 9px;
-  background: var(--c-border);
-  border: none;
-  cursor: pointer;
-  transition: background 0.2s;
-  flex-shrink: 0;
-  padding: 0;
-}
-.toggle-btn.on { background: var(--c-accent); }
-.toggle-knob {
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: #fff;
-  transition: transform 0.2s;
-  display: block;
-}
-.toggle-btn.on .toggle-knob { transform: translateX(16px); }
-
-/* Platform section */
-.platform-section { padding: 10px 0; }
-.platform-section.not-last { border-bottom: 1px solid var(--c-border); }
+/* 平台分组 */
+.platform-section { padding: var(--space-2) 0; }
+.platform-section.not-last { border-bottom: 1px solid var(--border); }
 .platform-name {
-  font-size: 11px;
+  margin-bottom: var(--space-1);
+  font-size: var(--text-xs);
   font-weight: 600;
-  color: var(--c-accent-lt);
+  color: var(--text-3);
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  margin-bottom: 4px;
 }
-.setting-row.sub { padding: 7px 0; }
+.setting-row.sub { min-height: 38px; }
 
-/* About */
-.about-row { display: flex; align-items: center; justify-content: space-between; }
-.about-actions { display: flex; gap: 8px; }
+/* 关于 */
+.about-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); }
+.about-actions { display: flex; gap: var(--space-2); }
 .card-about .card-desc { margin-bottom: 0; }
-
-/* Buttons */
-.btn-primary {
-  padding: 7px 14px;
-  border-radius: 7px;
-  background: var(--c-accent);
-  color: #fff;
-  border: none;
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  white-space: nowrap;
-}
-.btn-primary:hover { opacity: 0.85; }
-.btn-ghost {
-  padding: 7px 14px;
-  border-radius: 7px;
-  background: rgba(255,255,255,0.05);
-  color: var(--c-text-2);
-  border: 1px solid rgba(255,255,255,0.08);
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  white-space: nowrap;
-}
-.btn-ghost:hover { background: rgba(255,255,255,0.08); color: var(--c-text); }
 </style>

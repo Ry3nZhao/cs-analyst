@@ -1,23 +1,27 @@
 <template>
   <div class="matches-page">
-    <!-- Stat cards -->
+    <!-- 概览 -->
     <div class="stats-row">
-      <div v-for="s in stats" :key="s.label" class="stat-card">
-        <div class="stat-num" :style="{ color: s.color }">{{ s.value }}</div>
-        <div class="stat-label">{{ s.label }}</div>
-      </div>
+      <StatTile
+        v-for="s in stats"
+        :key="s.label"
+        :label="s.label"
+        :value="s.value"
+        :tone="s.tone"
+        compact
+      />
     </div>
 
-    <!-- Toolbar -->
+    <!-- 工具栏 -->
     <div class="toolbar">
-      <select v-model="filterPlatform" class="sel sel-sm">
+      <select v-model="filterPlatform" class="select">
         <option value="">全部来源</option>
         <option value="valve">Valve</option>
         <option value="renown">Renown</option>
         <option value="5eplay">5EPlay</option>
         <option value="imported">导入</option>
       </select>
-      <select v-model="filterStatus" class="sel sel-sm">
+      <select v-model="filterStatus" class="select">
         <option value="">全部状态</option>
         <option value="queued">排队中</option>
         <option value="downloading">下载中</option>
@@ -26,11 +30,11 @@
         <option value="skipped">跳过</option>
         <option value="expired">过期</option>
       </select>
-      <input v-model="search" class="search-input" placeholder="搜索地图、文件名、来源、Match ID…" />
+      <input v-model="search" class="input search-input" placeholder="搜索地图、文件名、来源、Match ID…" />
 
-      <!-- Column picker -->
+      <!-- 列显示 -->
       <div class="col-picker-wrap">
-        <button class="col-picker-btn" type="button" @click="colPickerOpen = !colPickerOpen">
+        <button class="btn" :class="{ 'is-open': colPickerOpen }" type="button" @click="colPickerOpen = !colPickerOpen">
           列显示
         </button>
         <div v-if="colPickerOpen" class="col-picker-panel">
@@ -42,14 +46,14 @@
             />
             {{ col.label }}
           </label>
-          <button class="col-picker-reset" type="button" @click="resetColumns">恢复默认</button>
+          <button class="btn btn-sm col-picker-reset" type="button" @click="resetColumns">恢复默认</button>
         </div>
       </div>
 
-      <!-- Right-side action buttons -->
+      <!-- 右侧操作 -->
       <div class="toolbar-right">
         <button
-          class="queue-toggle"
+          class="btn queue-toggle"
           :class="{ active: !status.queuePaused }"
           :disabled="Boolean(status.backgroundTask)"
           @click="runToggleAutoUpdate"
@@ -57,24 +61,24 @@
           <span class="queue-dot" />
           {{ status.queuePaused ? '自动更新：关' : '自动更新：开' }}
         </button>
-        <button class="act-btn act-discover" :disabled="Boolean(status.backgroundTask)" @click="runDiscover">
+        <button class="btn" :disabled="Boolean(status.backgroundTask)" @click="runDiscover">
           立即发现
         </button>
-        <button class="act-btn act-download" :disabled="Boolean(status.backgroundTask)" @click="runForceDownload">
+        <button class="btn" :disabled="Boolean(status.backgroundTask)" @click="runForceDownload">
           立即下载
         </button>
-        <button class="act-btn act-import" @click="runImport">
-          导入对局
-        </button>
-        <button class="act-btn act-metadata" :disabled="Boolean(status.backgroundTask)" @click="runRefreshMetadata">
+        <button class="btn" :disabled="Boolean(status.backgroundTask)" @click="runRefreshMetadata">
           更新元数据
+        </button>
+        <button class="btn-primary" @click="runImport">
+          导入对局
         </button>
       </div>
     </div>
 
-    <!-- Table -->
-    <div class="table-wrap">
-      <table class="match-table">
+    <!-- 表格 -->
+    <div class="table-wrap match-table-wrap">
+      <table class="data-table">
         <thead>
           <tr>
             <th
@@ -84,14 +88,15 @@
             >
               {{ col.label }}
             </th>
-            <th class="col-actions"></th>
+            <th class="actions"></th>
           </tr>
         </thead>
         <tbody>
           <tr
             v-for="job in visibleJobs"
             :key="job.id"
-            class="match-row"
+            class="clickable"
+            :class="{ selected: drawerOpen && selected?.id === job.id }"
             @click="openDetail(job)"
           >
             <td
@@ -100,83 +105,90 @@
               :class="cellClass(col.key)"
             >
               <template v-if="col.key === 'source'">
-                <span class="source-chip" :class="`platform-${job.platform}`">{{ job.source }}</span>
+                <span class="tag" :title="job.source">{{ job.source }}</span>
               </template>
               <template v-else-if="col.key === 'progress'">
-                <template v-if="job.status === 'downloading'">
-                  <div class="prog-bar">
-                    <div class="prog-fill" :style="{ width: `${Math.round((job.progress || 0) * 100)}%` }" />
+                <div v-if="job.status === 'downloading'" class="prog-cell">
+                  <div class="progress">
+                    <div class="progress-fill" :style="{ width: `${Math.round((job.progress || 0) * 100)}%` }" />
                   </div>
-                  <span class="prog-pct">{{ Math.round((job.progress || 0) * 100) }}%</span>
-                </template>
-                <span v-else class="dash">—</span>
+                  <span class="prog-pct num">{{ Math.round((job.progress || 0) * 100) }}%</span>
+                </div>
+                <span v-else class="dim">—</span>
               </template>
               <template v-else-if="col.key === 'analysis'">
-                <span
+                <StatusChip
                   v-if="job.analysisStatus"
-                  class="status-chip"
-                  :style="statusStyle(analysisColorKey(job.analysisStatus))"
+                  :tone="analysisTone(job.analysisStatus)"
+                  :pulse="job.analysisStatus === 'running'"
+                  :label="analysisLabel(job.analysisStatus)"
                   :title="job.analysisError ?? (job.analysisMs != null ? `耗时 ${(job.analysisMs / 1000).toFixed(1)} 秒` : '')"
-                >
-                  <span class="status-dot2" :style="{ background: statusColor(analysisColorKey(job.analysisStatus)) }" />
-                  {{ analysisLabel(job.analysisStatus) }}
-                </span>
-                <span v-else class="dash">—</span>
+                />
+                <span v-else class="dim">—</span>
               </template>
               <template v-else-if="col.key === 'status'">
-                <span class="status-chip" :style="statusStyle(job.status)">
-                  <span class="status-dot2" :style="{ background: statusColor(job.status) }" />
-                  {{ statusLabel(job.status) }}
-                </span>
+                <StatusChip
+                  :tone="statusTone(job.status)"
+                  :pulse="job.status === 'downloading'"
+                  :label="statusLabel(job.status)"
+                />
               </template>
               <template v-else>
                 {{ formatCell(col.key, job) }}
               </template>
             </td>
-            <td class="col-actions" @click.stop>
+            <td class="actions" @click.stop>
               <button
                 v-if="['failed','expired'].includes(job.status)"
-                class="row-btn row-retry"
+                class="btn btn-sm"
                 @click="retry(job.id)"
               >重试</button>
               <button
                 v-if="['queued','downloading'].includes(job.status)"
-                class="row-btn row-cancel"
+                class="btn-danger btn-sm"
                 @click="cancel(job.id)"
               >取消</button>
               <button
                 v-if="job.status === 'completed' && job.filePath && !['pending','running'].includes(job.analysisStatus ?? '')"
-                class="row-btn row-retry"
+                class="btn btn-sm"
                 :title="job.analysisStatus === 'failed' ? (job.analysisError ?? '') : ''"
                 @click="reanalyze(job.id)"
               >{{ job.analysisStatus ? '重新解析' : '解析' }}</button>
             </td>
           </tr>
           <tr v-if="visibleJobs.length === 0">
-            <td :colspan="visibleColumns.length + 1" class="empty-row">暂无对局记录</td>
+            <td :colspan="visibleColumns.length + 1" class="empty">暂无对局记录</td>
           </tr>
         </tbody>
       </table>
     </div>
 
-    <!-- Detail drawer -->
+    <!-- 详情抽屉 -->
     <USlideover v-model:open="drawerOpen" side="right">
       <template #content="{ close }">
         <div class="drawer-body">
           <div class="drawer-header">
             <span class="drawer-title">对局详情</span>
-            <button class="drawer-close" @click="close">✕</button>
+            <button class="btn-ghost btn-sm btn-icon" aria-label="关闭" @click="close">✕</button>
           </div>
           <template v-if="selected">
-            <div class="detail-grid">
-              <template v-for="[k, v] in detailRows" :key="k">
-                <div class="detail-key">{{ k }}</div>
-                <div class="detail-val">{{ v }}</div>
-              </template>
+            <div class="drawer-status">
+              <StatusChip :tone="statusTone(selected.status)" :label="statusLabel(selected.status)" />
+              <StatusChip
+                v-if="selected.analysisStatus"
+                :tone="analysisTone(selected.analysisStatus)"
+                :label="analysisLabel(selected.analysisStatus)"
+              />
             </div>
+            <dl class="kv-grid drawer-kv">
+              <template v-for="[k, v] in detailRows" :key="k">
+                <dt>{{ k }}</dt>
+                <dd :class="{ mono: k === 'Game Info' }">{{ v }}</dd>
+              </template>
+            </dl>
             <button
               v-if="['failed','expired'].includes(selected.status)"
-              class="retry-full-btn"
+              class="btn-primary retry-full-btn"
               @click="retry(selected.id); drawerOpen = false"
             >立即重试</button>
           </template>
@@ -208,13 +220,15 @@ const colPickerOpen = ref(false);
 
 const stats = computed(() => {
   const c = (s: string) => jobs.value.filter(j => j.status === s).length;
+  const failed = c('failed') + c('expired');
+  // 只有需要关注的数字才带语义色块；数字本身保持白色
   return [
-    { label: '已完成', value: c('completed'),   color: 'var(--c-success)' },
-    { label: '排队中', value: c('queued'),      color: '#818cf8' },
-    { label: '下载中', value: c('downloading'), color: 'var(--c-accent-lt)' },
-    { label: '失败',   value: c('failed') + c('expired'), color: 'var(--c-error)' },
-    { label: '已解析', value: jobs.value.filter(j => j.analysisStatus === 'done').length, color: 'var(--c-success)' },
-  ];
+    { label: '已完成', value: c('completed'), tone: 'neutral' },
+    { label: '排队中', value: c('queued'), tone: 'neutral' },
+    { label: '下载中', value: c('downloading'), tone: c('downloading') > 0 ? 'info' : 'neutral' },
+    { label: '失败', value: failed, tone: failed > 0 ? 'danger' : 'neutral' },
+    { label: '已解析', value: jobs.value.filter(j => j.analysisStatus === 'done').length, tone: 'success' },
+  ] as const;
 });
 
 const visibleJobs = computed(() =>
@@ -281,16 +295,20 @@ function formatCell(key: MatchColumnKey, job: MatchDto) {
 }
 
 function cellClass(key: MatchColumnKey) {
-  return {
-    fileName: 'file-name-col',
-    mapName: 'map-name',
-    durationSeconds: 'duration-col',
-    playedAt: 'time-col',
-    gameMode: 'mode-col',
-    gameType: 'type-col',
-    filePath: 'path-col',
-    demGameInfo: 'json-col',
-  }[key] ?? '';
+  const num = MATCH_COLUMNS.find(c => c.key === key)?.className === 'num' ? 'num ' : '';
+  return num + ({
+    fileName: 'truncate',
+    mapName: 'strong',
+    durationSeconds: 'muted',
+    playedAt: 'muted nowrap',
+    gameMode: 'muted nowrap',
+    gameType: 'muted',
+    matchId: 'mono muted',
+    shareCode: 'mono muted nowrap',
+    filePath: 'truncate muted',
+    demoVersionGuid: 'mono muted',
+    demGameInfo: 'truncate mono muted',
+  }[key] ?? '');
 }
 
 async function runToggleAutoUpdate() {
@@ -350,9 +368,10 @@ function analysisLabel(s: string) {
   return { pending: '待解析', running: '解析中', done: '已解析', failed: '解析失败' }[s] ?? s;
 }
 
-/** 复用下载状态的配色 */
-function analysisColorKey(s: string) {
-  return { pending: 'queued', running: 'downloading', done: 'completed', failed: 'failed' }[s] ?? s;
+type Tone = 'neutral' | 'success' | 'warning' | 'danger' | 'info';
+
+function analysisTone(s: string): Tone {
+  return ({ pending: 'neutral', running: 'info', done: 'success', failed: 'danger' } as Record<string, Tone>)[s] ?? 'neutral';
 }
 
 async function reanalyze(id: string) {
@@ -370,13 +389,8 @@ function statusLabel(s: string) {
   return { queued: '排队中', downloading: '下载中', completed: '已完成', failed: '失败', skipped: '跳过', expired: '过期' }[s] ?? s;
 }
 
-function statusColor(s: string) {
-  return { downloading: '#a78bfa', completed: '#22d3a0', failed: '#f16060', expired: '#f97316', queued: '#818cf8', skipped: '#3d4460' }[s] ?? '#5c647a';
-}
-
-function statusStyle(s: string) {
-  const c = statusColor(s);
-  return { color: c, background: `${c}18`, borderColor: `${c}30` };
+function statusTone(s: string): Tone {
+  return ({ queued: 'neutral', downloading: 'info', completed: 'success', failed: 'danger', expired: 'warning', skipped: 'neutral' } as Record<string, Tone>)[s] ?? 'neutral';
 }
 
 function gameModeLabel(mode?: string | null) {
@@ -477,329 +491,78 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.matches-page { display: flex; flex-direction: column; gap: 16px; height: 100%; }
+.matches-page { display: flex; flex-direction: column; gap: var(--space-4); height: 100%; }
 
-/* Stats */
-.stats-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
-.stat-card {
-  background: var(--c-card);
-  border: 1px solid var(--c-border);
-  border-radius: 10px;
-  padding: 14px 16px;
-}
-.stat-num  { font-size: 26px; font-weight: 700; line-height: 1; }
-.stat-label { font-size: 11px; color: var(--c-text-3); margin-top: 5px; }
+.stats-row { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--space-3); }
 
-/* Toolbar */
-.toolbar { display: flex; gap: 8px; align-items: center; }
-.toolbar-right {
-  margin-left: auto;
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.sel {
-  background: var(--c-surface);
-  border: 1px solid var(--c-border);
-  border-radius: 7px;
-  color: var(--c-text-2);
-  padding: 6px 10px;
-  font-size: 12px;
-  cursor: pointer;
-  outline: none;
-  min-width: 90px;
-}
-.sel:focus { border-color: var(--c-accent); }
-.search-input {
-  flex: 1;
-  max-width: 240px;
-  background: var(--c-surface);
-  border: 1px solid var(--c-border);
-  border-radius: 7px;
-  color: var(--c-text);
-  padding: 6px 12px;
-  font-size: 12px;
-  outline: none;
-}
-.search-input::placeholder { color: var(--c-text-3); }
-.search-input:focus { border-color: var(--c-accent); }
+/* 工具栏 */
+.toolbar { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; }
+.toolbar-right { margin-left: auto; display: flex; gap: var(--space-2); align-items: center; }
+.select { min-width: 100px; }
+.search-input { flex: 1; min-width: 160px; max-width: 260px; }
 
 .col-picker-wrap { position: relative; }
-.col-picker-btn {
-  padding: 6px 12px;
-  border-radius: 7px;
-  border: 1px solid var(--c-border);
-  background: var(--c-surface);
-  color: var(--c-text-2);
-  font-size: 12px;
-  cursor: pointer;
-  white-space: nowrap;
-}
-.col-picker-btn:hover { border-color: var(--c-accent); color: var(--c-text); }
+.btn.is-open { border-color: var(--border-strong); color: var(--text); }
 .col-picker-panel {
   position: absolute;
   top: calc(100% + 4px);
-  right: 0;
+  left: 0;
   z-index: 20;
   min-width: 180px;
-  max-height: 320px;
+  max-height: 340px;
   overflow-y: auto;
-  background: var(--c-card);
-  border: 1px solid var(--c-border);
-  border-radius: 8px;
-  padding: 8px;
-  box-shadow: 0 8px 24px rgba(0,0,0,.35);
+  padding: var(--space-1);
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-pop);
 }
 .col-picker-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 5px 6px;
-  font-size: 12px;
-  color: var(--c-text-2);
-  cursor: pointer;
-  border-radius: 4px;
-}
-.col-picker-item:hover { background: var(--c-card-hover); }
-.col-picker-reset {
-  margin-top: 6px;
-  width: 100%;
-  padding: 5px;
-  border: 1px solid var(--c-border);
-  border-radius: 5px;
-  background: transparent;
-  color: var(--c-text-3);
-  font-size: 11px;
+  gap: var(--space-2);
+  height: 28px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  color: var(--text-2);
   cursor: pointer;
 }
-.col-picker-reset:hover { color: var(--c-text); border-color: var(--c-accent); }
+.col-picker-item:hover { background: var(--surface-hover); color: var(--text); }
+.col-picker-item input { accent-color: var(--gray-0); }
+.col-picker-reset { width: 100%; margin-top: var(--space-1); }
 
-.queue-toggle {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 13px;
-  border-radius: 7px;
-  border: 1px solid rgba(255,255,255,0.08);
-  background: rgba(255,255,255,0.05);
-  color: var(--c-text-2);
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
-}
-.queue-toggle:disabled { opacity: 0.45; cursor: default; }
-.queue-toggle:not(:disabled):hover { background: rgba(255,255,255,0.09); color: var(--c-text); }
-.queue-toggle.active {
-  background: color-mix(in srgb, var(--c-accent) 14%, transparent);
-  color: var(--c-accent-lt);
-  border-color: var(--c-accent-bdr);
-}
-.queue-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--c-text-faint);
-  flex-shrink: 0;
-}
-.queue-toggle.active .queue-dot {
-  background: var(--c-accent-lt);
-  box-shadow: 0 0 5px var(--c-accent-lt);
-}
+.queue-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text-disabled); flex-shrink: 0; }
+.queue-toggle.active { color: var(--text); }
+.queue-toggle.active .queue-dot { background: var(--success); }
 
-.act-btn {
-  padding: 6px 12px;
-  border-radius: 7px;
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  border: 1px solid;
-  transition: opacity 0.12s;
-  white-space: nowrap;
-}
-.act-btn:disabled { opacity: 0.45; cursor: default; }
-.act-btn:not(:disabled):hover { opacity: 0.8; }
+/* 表格 */
+.match-table-wrap { flex: 1; }
+.col-prog { width: 120px; }
+.prog-cell { display: flex; align-items: center; gap: var(--space-2); }
+.prog-cell .progress { flex: 1; }
+.prog-pct { width: 32px; text-align: right; font-size: var(--text-xs); color: var(--text-3); }
 
-.act-discover {
-  background: rgba(99,102,241,.12);
-  color: #a5b4fc;
-  border-color: rgba(99,102,241,.3);
-}
-.act-download {
-  background: var(--c-accent-bg);
-  color: var(--c-accent-lt);
-  border-color: var(--c-accent-bdr);
-}
-.act-import {
-  background: rgba(34,197,94,.1);
-  color: #4ade80;
-  border-color: rgba(34,197,94,.25);
-}
-.act-metadata {
-  background: rgba(14,165,233,.1);
-  color: #38bdf8;
-  border-color: rgba(14,165,233,.25);
-}
-
-/* Table */
-.table-wrap {
-  flex: 1;
-  background: var(--c-surface);
-  border: 1px solid var(--c-border);
-  border-radius: 10px;
-  overflow: auto;
-  min-height: 0;
-}
-.match-table { width: 100%; border-collapse: collapse; }
-.match-table thead th {
-  padding: 10px 12px;
-  text-align: left;
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--c-text-3);
-  border-bottom: 1px solid var(--c-border);
-  white-space: nowrap;
-}
-.match-row { cursor: pointer; transition: background 0.1s; }
-.match-row:hover { background: var(--c-card-hover); }
-.match-row td {
-  padding: 9px 12px;
-  font-size: 12px;
-  border-bottom: 1px solid var(--c-border-sub);
-  vertical-align: middle;
-}
-
-.source-chip {
-  display: inline-block;
-  padding: 2px 7px;
-  border-radius: 4px;
-  font-size: 11px;
-  font-weight: 500;
-  background: var(--c-accent-bg);
-  color: var(--c-accent-lt);
-  border: 1px solid var(--c-accent-bdr);
-  max-width: 180px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.platform-imported {
-  background: rgba(34,197,94,.1);
-  color: #4ade80;
-  border-color: rgba(34,197,94,.25);
-}
-
-.time-col     { color: var(--c-text-3); white-space: nowrap; }
-.duration-col { color: var(--c-text-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.file-name-col { color: var(--c-text-2); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.map-name     { color: var(--c-text-2); }
-.mode-col     { color: var(--c-text-3); white-space: nowrap; }
-.type-col     { color: var(--c-text-3); white-space: nowrap; font-variant-numeric: tabular-nums; }
-.path-col     { max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--c-text-3); }
-.json-col     { max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: monospace; font-size: 11px; color: var(--c-text-3); }
-.col-prog     { width: 110px; }
-.col-actions  { width: 70px; }
-
-.prog-bar {
-  height: 4px;
-  border-radius: 2px;
-  background: var(--c-border);
-  overflow: hidden;
-  margin-bottom: 3px;
-}
-.prog-fill {
-  height: 100%;
-  border-radius: 2px;
-  background: var(--c-accent-lt);
-  transition: width 0.3s;
-}
-.prog-pct { font-size: 10px; color: var(--c-text-3); }
-.dash { color: var(--c-text-faint); }
-
-.status-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 3px 8px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 500;
-  border: 1px solid;
-  white-space: nowrap;
-}
-.status-dot2 {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.row-btn {
-  padding: 3px 9px;
-  border-radius: 5px;
-  font-size: 11px;
-  font-weight: 500;
-  cursor: pointer;
-  border: 1px solid;
-  transition: opacity 0.1s;
-}
-.row-btn:hover { opacity: 0.75; }
-.row-retry  { background: rgba(129,140,248,.12); color: #818cf8; border-color: rgba(129,140,248,.3); }
-.row-cancel { background: rgba(241,96,96,.1);   color: #f16060; border-color: rgba(241,96,96,.25); }
-
-.empty-row {
-  text-align: center;
-  padding: 48px;
-  color: var(--c-text-faint);
-  font-size: 13px;
-}
-
-/* Drawer */
+/* 抽屉 */
 .drawer-body {
   height: 100%;
-  background: var(--c-surface);
-  padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  background: var(--surface);
+  box-sizing: border-box;
+  overflow-y: auto;
 }
 .drawer-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border-subtle);
 }
-.drawer-title { font-size: 14px; font-weight: 600; color: #fff; }
-.drawer-close {
-  background: none;
-  border: none;
-  color: var(--c-text-3);
-  font-size: 14px;
-  cursor: pointer;
-  padding: 2px 6px;
-}
-.drawer-close:hover { color: var(--c-text); }
-
-.detail-grid {
-  display: grid;
-  grid-template-columns: 80px 1fr;
-  gap: 10px 12px;
-}
-.detail-key { font-size: 11px; color: var(--c-text-3); padding-top: 1px; }
-.detail-val { font-size: 12px; color: var(--c-text-2); word-break: break-all; }
-
-.retry-full-btn {
-  margin-top: auto;
-  padding: 9px;
-  border-radius: 8px;
-  background: var(--c-accent-bg);
-  color: var(--c-accent-lt);
-  border: 1px solid var(--c-accent-bdr);
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  width: 100%;
-}
-.retry-full-btn:hover { opacity: 0.8; }
+.drawer-title { font-size: var(--text-lg); font-weight: 600; color: var(--text); }
+.drawer-status { display: flex; gap: var(--space-2); }
+.drawer-kv { margin: 0; }
+.retry-full-btn { width: 100%; height: 34px; margin-top: auto; flex-shrink: 0; }
 </style>

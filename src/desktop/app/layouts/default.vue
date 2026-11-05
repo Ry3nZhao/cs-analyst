@@ -12,8 +12,8 @@
           </svg>
         </div>
         <div class="logo-text">
-          <span class="logo-title">CS Demo</span>
-          <span class="logo-sub">Analyst</span>
+          <span class="logo-title">CS Analyst</span>
+          <span class="logo-sub">Demo 分析</span>
         </div>
       </div>
 
@@ -36,10 +36,12 @@
         <div class="status-row">
           <span class="status-dot" :class="status.sidecarRunning ? 'on' : 'off'" />
           <span class="status-label">Sidecar</span>
+          <span class="status-value">{{ status.sidecarRunning ? '运行中' : '未运行' }}</span>
         </div>
         <div class="status-row">
           <span class="status-dot" :class="status.orchestratorRunning ? 'on' : 'off'" />
           <span class="status-label">下载器</span>
+          <span class="status-value">{{ status.orchestratorRunning ? '运行中' : '未运行' }}</span>
         </div>
         <div class="data-root" :title="status.dataRoot">{{ status.dataRoot }}</div>
       </div>
@@ -51,7 +53,7 @@
       <header class="topbar">
         <div class="topbar-left">
           <span class="page-title">{{ title }}</span>
-          <span v-if="status.lastDiscoverMinutesAgo != null" class="discover-ago">
+          <span v-if="status.lastDiscoverMinutesAgo != null" class="discover-ago num">
             {{ status.lastDiscoverMinutesAgo }}m 前发现
           </span>
           <div
@@ -61,13 +63,13 @@
           >
             <span class="task-label">{{ status.backgroundTask.label }}</span>
             <span class="task-current">{{ status.backgroundTask.current }}</span>
-            <span class="task-progress">
+            <span class="task-progress progress">
               <span
-                class="task-progress-fill"
+                class="task-progress-fill progress-fill"
                 :style="{ width: `${Math.round(status.backgroundTask.progress * 100)}%` }"
               />
             </span>
-            <span class="task-percent">{{ Math.round(status.backgroundTask.progress * 100) }}%</span>
+            <span class="task-percent num">{{ Math.round(status.backgroundTask.progress * 100) }}%</span>
           </div>
         </div>
         <div class="topbar-right" />
@@ -84,7 +86,7 @@
         <div class="log-drawer">
           <div class="log-header">
             <span class="log-title">后台任务日志</span>
-            <button class="drawer-close" type="button" @click="close">✕</button>
+            <button class="btn-ghost btn-sm btn-icon" type="button" aria-label="关闭" @click="close">✕</button>
           </div>
           <div class="log-list">
             <div v-for="(line, i) in logs" :key="`${i}-${line}`" class="log-line">{{ line }}</div>
@@ -173,19 +175,19 @@ onMounted(() => {
 .app-shell {
   display: flex;
   height: 100vh;
-  background: var(--c-bg);
-  color: var(--c-text);
+  background: var(--bg);
+  color: var(--text);
   overflow: hidden;
 }
 
-/* ── Sidebar ── */
+/* ── 侧边栏 ── */
 .sidebar {
-  width: 210px;
+  width: 196px;
   flex-shrink: 0;
-  background: var(--c-sidebar);
-  border-right: 1px solid var(--c-border);
   display: flex;
   flex-direction: column;
+  background: var(--bg-sunken);
+  border-right: 1px solid var(--border-subtle);
   overflow: hidden;
 }
 
@@ -193,278 +195,158 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 20px 16px 16px;
-  border-bottom: 1px solid var(--c-border-sub);
+  height: 52px;
+  padding: 0 var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+  box-sizing: border-box;
 }
-
 .logo-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  background: linear-gradient(135deg, var(--c-accent) 0%, #4f46e5 100%);
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
-  flex-shrink: 0;
+  border-radius: var(--radius-md);
+  background: var(--gray-0);
+  color: var(--text-inverse);
 }
-
-.logo-text {
-  display: flex;
-  flex-direction: column;
-  line-height: 1.2;
-}
-.logo-title {
-  font-size: 13px;
-  font-weight: 600;
-  color: #fff;
-}
-.logo-sub {
-  font-size: 10px;
-  color: var(--c-text-3);
-}
+.logo-text { display: flex; flex-direction: column; line-height: 1.2; }
+.logo-title { font-size: var(--text-md); font-weight: 600; color: var(--text); }
+.logo-sub { font-size: var(--text-xs); color: var(--text-3); }
 
 .nav {
   flex: 1;
-  padding: 10px 10px 0;
   display: flex;
   flex-direction: column;
   gap: 2px;
+  padding: var(--space-3) var(--space-2) 0;
 }
-
 .nav-item {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 9px;
-  padding: 9px 12px;
-  border-radius: 8px;
-  font-size: 13px;
-  color: var(--c-text-2);
+  gap: 10px;
+  height: 32px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-md);
+  color: var(--text-3);
+  font-size: var(--text-md);
   text-decoration: none;
-  transition: background 0.12s, color 0.12s;
-  cursor: pointer;
+  transition: background var(--duration), color var(--duration);
 }
-.nav-item:hover {
-  background: rgba(255,255,255,0.04);
-  color: var(--c-text);
+.nav-item:hover { background: var(--surface-hover); color: var(--text); }
+.nav-item.active { background: var(--surface-active); color: var(--text); font-weight: 500; }
+.nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: -8px;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  border-radius: 0 2px 2px 0;
+  background: var(--accent);
 }
-.nav-item.active {
-  background: var(--c-accent-bg);
-  color: var(--c-accent-lt);
-  font-weight: 500;
-}
-.nav-icon {
-  flex-shrink: 0;
-  opacity: 0.85;
-}
+.nav-icon { flex-shrink: 0; }
 
 .sidebar-footer {
-  padding: 14px 16px;
-  border-top: 1px solid var(--c-border-sub);
-}
-.status-row {
   display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 3px 0;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--border-subtle);
 }
-.status-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-.status-dot.on  { background: var(--c-success); box-shadow: 0 0 6px var(--c-success); }
-.status-dot.off { background: var(--c-text-faint); }
-.status-label { font-size: 11px; color: var(--c-text-3); }
+.status-row { display: flex; align-items: center; gap: var(--space-2); height: 20px; }
+.status-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.status-dot.on  { background: var(--success); }
+.status-dot.off { background: var(--text-disabled); }
+.status-label { font-size: var(--text-xs); color: var(--text-3); }
+.status-value { margin-left: auto; font-size: var(--text-xs); color: var(--text-disabled); }
 .data-root {
-  margin-top: 8px;
+  margin-top: var(--space-1);
   font-size: 10px;
-  color: var(--c-text-faint);
+  color: var(--text-disabled);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* ── Content ── */
-.content-wrap {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
+/* ── 内容区 ── */
+.content-wrap { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: hidden; }
 
 .topbar {
-  height: 50px;
+  height: 52px;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 20px;
-  border-bottom: 1px solid var(--c-border-sub);
-  background: var(--c-bg);
-  flex-shrink: 0;
+  padding: 0 var(--space-5);
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg);
+  box-sizing: border-box;
 }
-.topbar-left {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.page-title {
-  font-size: 13px;
-  font-weight: 600;
-  color: #fff;
-}
-.discover-ago {
-  font-size: 11px;
-  color: var(--c-text-faint);
-}
+.topbar-left { display: flex; align-items: center; gap: var(--space-3); min-width: 0; }
+.page-title { font-size: var(--text-lg); font-weight: 600; color: var(--text); white-space: nowrap; }
+.discover-ago { font-size: var(--text-xs); color: var(--text-3); white-space: nowrap; }
+
 .task-pill {
-  height: 28px;
+  height: 26px;
   min-width: 260px;
-  max-width: 420px;
+  max-width: 440px;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) 84px auto;
   align-items: center;
-  gap: 8px;
-  padding: 0 9px;
-  border-radius: 7px;
-  border: 1px solid var(--c-accent-bdr);
-  background: var(--c-accent-bg);
-  color: var(--c-text-2);
+  gap: var(--space-2);
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--accent-line);
+  background: var(--surface);
 }
-.task-failed {
-  border-color: color-mix(in srgb, var(--c-error) 40%, transparent);
-  background: color-mix(in srgb, var(--c-error) 12%, transparent);
-}
-.task-completed {
-  border-color: color-mix(in srgb, var(--c-success) 40%, transparent);
-  background: color-mix(in srgb, var(--c-success) 10%, transparent);
-}
-.task-label {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--c-accent-lt);
-  white-space: nowrap;
-}
+.task-failed { border-color: var(--danger-line); background: var(--danger-soft); }
+.task-failed .task-progress-fill { background: var(--danger); }
+.task-completed { border-color: var(--success-line); }
+.task-completed .task-progress-fill { background: var(--success); }
+.task-label { font-size: var(--text-xs); font-weight: 600; color: var(--text); white-space: nowrap; }
 .task-current {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 11px;
-  color: var(--c-text-3);
+  font-size: var(--text-xs);
+  color: var(--text-3);
 }
-.task-progress {
-  height: 4px;
-  border-radius: 999px;
-  overflow: hidden;
-  background: rgba(255,255,255,0.12);
-}
-.task-progress-fill {
-  display: block;
-  height: 100%;
-  background: var(--c-accent-lt);
-  transition: width 0.2s;
-}
-.task-percent {
-  width: 32px;
-  font-size: 10px;
-  text-align: right;
-  color: var(--c-text-3);
-}
-.topbar-right {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
+.task-progress-fill { display: block; }
+.task-percent { width: 32px; font-size: var(--text-xs); text-align: right; color: var(--text-2); }
+.topbar-right { display: flex; align-items: center; gap: var(--space-2); }
 
-.btn-accent, .btn-ghost {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 6px 12px;
-  border-radius: 7px;
-  font-size: 12px;
-  font-weight: 500;
-  border: 1px solid transparent;
-  cursor: pointer;
-  transition: opacity 0.1s;
-}
-.btn-accent:hover, .btn-ghost:hover { opacity: 0.82; }
-.btn-accent:disabled, .btn-ghost:disabled {
-  opacity: 0.45;
-  cursor: default;
-}
+.page-content { flex: 1; overflow-y: auto; padding: var(--space-5); }
 
-.btn-accent {
-  background: var(--c-accent-bg);
-  color: var(--c-accent-lt);
-  border-color: var(--c-accent-bdr);
-}
-.btn-ghost {
-  background: rgba(255,255,255,0.05);
-  color: var(--c-text-2);
-  border-color: rgba(255,255,255,0.08);
-}
-.btn-ghost.btn-warn {
-  background: rgba(245,158,11,0.1);
-  color: #f59e0b;
-  border-color: rgba(245,158,11,0.2);
-}
-
-.page-content {
-  flex: 1;
-  overflow-y: auto;
-  padding: 20px;
-}
-
+/* ── 日志抽屉 ── */
 .log-drawer {
   height: 100%;
-  background: var(--c-surface);
   display: flex;
   flex-direction: column;
-  padding: 18px;
+  padding: var(--space-4) var(--space-5);
+  background: var(--surface);
+  box-sizing: border-box;
 }
 .log-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--c-border);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border-subtle);
 }
-.log-title {
-  font-size: 13px;
-  font-weight: 600;
-  color: #fff;
-}
-.drawer-close {
-  background: none;
-  border: none;
-  color: var(--c-text-3);
-  cursor: pointer;
-  font-size: 13px;
-}
-.drawer-close:hover { color: var(--c-text); }
-.log-list {
-  flex: 1;
-  min-height: 0;
-  overflow: auto;
-  padding-top: 12px;
-  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-}
+.log-title { font-size: var(--text-lg); font-weight: 600; color: var(--text); }
+.log-list { flex: 1; min-height: 0; overflow: auto; padding-top: var(--space-2); font-family: var(--font-mono); }
 .log-line {
-  padding: 4px 0;
-  font-size: 11px;
+  padding: var(--space-1) 0;
+  font-size: var(--text-xs);
   line-height: 1.5;
-  color: var(--c-text-2);
-  border-bottom: 1px solid var(--c-border-sub);
+  color: var(--text-2);
+  border-bottom: 1px solid var(--border-subtle);
   white-space: pre-wrap;
   word-break: break-word;
 }
-.log-empty {
-  padding: 24px 0;
-  text-align: center;
-  font-size: 12px;
-  color: var(--c-text-faint);
-}
+.log-empty { padding: var(--space-6) 0; text-align: center; font-size: var(--text-sm); color: var(--text-disabled); }
 </style>
