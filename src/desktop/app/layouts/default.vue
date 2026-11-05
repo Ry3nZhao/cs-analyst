@@ -107,6 +107,7 @@ const { status, logs, logOpen, refreshStatus, listenBackgroundWork } = useAppSta
 const titles: Record<string, string> = {
   '/matches': '对局',
   '/players': '选手',
+  '/aim': '枪法与压枪',
   '/accounts': '账户管理',
   '/settings': '系统设置',
 };
@@ -143,6 +144,18 @@ const nav = [
         h('svg', { width: 15, height: 15, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': 1.8, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, [
           h('circle', { cx: 12, cy: 8, r: 4 }),
           h('path', { d: 'M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1' }),
+        ]),
+    }),
+  },
+  {
+    to: '/aim',
+    label: '枪法',
+    icon: defineComponent({
+      render: () =>
+        h('svg', { width: 15, height: 15, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': 1.8, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, [
+          h('circle', { cx: 12, cy: 12, r: 8 }),
+          h('path', { d: 'M12 2v4M12 18v4M2 12h4M18 12h4' }),
+          h('circle', { cx: 12, cy: 12, r: 1 }),
         ]),
     }),
   },
