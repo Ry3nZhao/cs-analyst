@@ -270,3 +270,4 @@ export interface ValveBotConfigUpdateDto {
   runOnStartup?: boolean;
 }
 export * from './stats.js';
+export * from './identity.js';

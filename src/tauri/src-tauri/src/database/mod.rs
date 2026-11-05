@@ -25,6 +25,7 @@ const MIGRATIONS: &[(&str, i32)] = &[
     (include_str!("../../../../../migrations/sqlite/001_initial.sql"), 1),
     (include_str!("../../../../../migrations/sqlite/002_analysis.sql"), 2),
     (include_str!("../../../../../migrations/sqlite/003_stats.sql"), 3),
+    (include_str!("../../../../../migrations/sqlite/004_identity.sql"), 4),
 ];
 
 pub struct Database {

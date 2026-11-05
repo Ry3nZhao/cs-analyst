@@ -178,6 +178,7 @@ impl AnalysisQueue {
                 match repo::replace_match_analysis(&db, id, &demo, replay_rel.as_deref(), elapsed_ms) {
                     Ok(()) => {
                         crate::stats::on_match_ingested(&db, id, &demo);
+                        crate::identity::on_match_analyzed(&db, id);
                         drop(db);
                         log(format!(
                             "done {id}: {} rounds, {} kills, {} shots in {elapsed_ms} ms",

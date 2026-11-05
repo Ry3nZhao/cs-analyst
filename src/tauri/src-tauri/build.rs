@@ -32,6 +32,15 @@ const COMMANDS: &[&str] = &[
     "get_analysis_status",
     "get_match_detail",
     "list_player_stats",
+    "search_persons",
+    "get_person",
+    "get_head_to_head",
+    "list_teammates",
+    "merge_persons",
+    "undo_merge",
+    "split_identity",
+    "update_person",
+    "rebuild_head_to_head",
 ];
 
 fn main() {

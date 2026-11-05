@@ -1,6 +1,7 @@
 mod analysis;
 mod commands;
 mod database;
+mod identity;
 mod orchestrator;
 mod sidecar;
 mod stats;
@@ -31,6 +32,7 @@ pub fn run() {
             repo::sync_data_root_setting(&database).expect("failed to sync data_root setting");
             let _ = repo::reset_interrupted_downloads(&database);
             let db = Arc::new(Mutex::new(database));
+            identity::init(db.clone());
             let script = resolve_sidecar_script();
             let sidecar = Arc::new(SidecarManager::new(script));
             let analysis = AnalysisQueue::new(db.clone());
@@ -119,6 +121,15 @@ pub fn run() {
             commands::get_analysis_status,
             crate::stats::commands::get_match_detail,
             crate::stats::commands::list_player_stats,
+            identity::commands::search_persons,
+            identity::commands::get_person,
+            identity::commands::get_head_to_head,
+            identity::commands::list_teammates,
+            identity::commands::merge_persons,
+            identity::commands::undo_merge,
+            identity::commands::split_identity,
+            identity::commands::update_person,
+            identity::commands::rebuild_head_to_head,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
