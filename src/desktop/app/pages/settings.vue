@@ -21,6 +21,8 @@
     <SettingsExperience />
     <!-- 存储与备份（W3-D） -->
     <StorageBackupSection />
+    <!-- 集锦规则与 CS2 播放（W3-A） -->
+    <HighlightSettingsSection />
 
     <!-- Scheduling -->
     <div class="card card-pad">

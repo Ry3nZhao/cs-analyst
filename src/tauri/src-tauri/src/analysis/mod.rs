@@ -187,6 +187,7 @@ impl AnalysisQueue {
                             demo.shots.len()
                         ));
                         crate::aim::analyze_match(&self.db, id, &path, Some(&demo));
+                        crate::highlights::on_match_analyzed(&self.db, id);
                         crate::storage::on_match_analyzed(id);
                         self.emit(id, "done", None);
                     }

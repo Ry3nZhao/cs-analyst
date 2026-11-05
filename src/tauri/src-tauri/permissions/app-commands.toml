@@ -63,6 +63,7 @@ permissions = [
   "allow-list-backups",
   "allow-restore-backup",
   "allow-inspect-backup",
+  "allow-list-highlights", "allow-get-highlight-settings", "allow-update-highlight-settings", "allow-recompute-highlights", "allow-prepare-highlight-playback", "allow-launch-highlight-in-cs2",
   "allow-import-demos",
   "allow-refresh-match-metadata",
   "allow-force-download-now",

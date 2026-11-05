@@ -42,6 +42,7 @@
         </div>
 
         <div class="head-actions">
+          <NuxtLink :to="`/highlights?match=${encodeURIComponent(matchId)}`" class="btn">本场集锦</NuxtLink>
           <NuxtLink :to="`/replay/${matchId}`" class="btn">2D 回放</NuxtLink>
         </div>
       </header>

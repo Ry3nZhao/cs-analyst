@@ -1,8 +1,9 @@
 // W3-C：指标释义数据，供 <MetricHelp metric="adr" /> 使用（Nuxt 自动导入）。
 // 口径来自 docs/stats.md（基础指标、Swing）、docs/aim.md（枪法、压枪）和 docs/training.md（瞄准训练）。改口径时两边一起改。
 // 参考值是粗略的经验区间（社区常见水平），只用来帮用户建立直觉，不是本地百分位。
+import { HIGHLIGHT_METRICS } from './highlightGlossary';
 
-export type MetricCategory = 'basic' | 'opening' | 'trade' | 'clutch' | 'utility' | 'economy' | 'aim' | 'spray' | 'swing' | 'training';
+export type MetricCategory = 'basic' | 'opening' | 'trade' | 'clutch' | 'utility' | 'economy' | 'aim' | 'spray' | 'swing' | 'training' | 'highlight';
 
 export interface MetricReference {
   /** 例如「≥ 85」「< 450 ms」 */
@@ -28,7 +29,7 @@ export interface MetricDefinition {
   /** 需要注意的限制，例如数据不可用的情况 */
   caveat?: string;
   /** 文档出处 */
-  source: 'docs/stats.md' | 'docs/aim.md' | 'docs/training.md';
+  source: 'docs/stats.md' | 'docs/aim.md' | 'docs/training.md' | 'docs/highlights.md';
 }
 
 export const METRIC_CATEGORY_LABELS: Record<MetricCategory, string> = {
@@ -42,6 +43,7 @@ export const METRIC_CATEGORY_LABELS: Record<MetricCategory, string> = {
   spray: '压枪',
   swing: 'Swing',
   training: '瞄准训练',
+  highlight: '集锦',
 };
 
 const BLIND_CAVEAT = 'ESL 等职业服务器的 demo 没有致盲事件，这类场次显示「不可用」，不是 0。';

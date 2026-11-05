@@ -647,6 +647,7 @@ dependencies = [
  "chrono",
  "demo-parse",
  "dirs",
+ "highlights",
  "notify",
  "open",
  "parking_lot",
@@ -1618,6 +1619,15 @@ name = "hex"
 version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
+
+[[package]]
+name = "highlights"
+version = "0.1.0"
+dependencies = [
+ "aim",
+ "serde",
+ "serde_json",
+]
 
 [[package]]
 name = "html5ever"

@@ -35,6 +35,7 @@ zstd = "0.13"
 demo-parse = { path = "crates/demo-parse" }
 stats = { path = "crates/stats" }
 aim = { path = "crates/aim" }
+highlights = { path = "crates/highlights" }
 png = "0.17" # replay: decoded CS2 radar cache
 # 2.4+ 需要 tauri 2.12；先跟着现有的 tauri 2.11
 tauri-plugin-notification = "~2.3"
