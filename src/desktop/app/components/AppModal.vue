@@ -16,7 +16,7 @@
           <slot name="header">
             <h2 id="app-modal-title" class="app-modal-title">{{ title }}</h2>
           </slot>
-          <button type="button" class="app-modal-close" aria-label="关闭" @click="close">×</button>
+          <button type="button" class="btn-ghost btn-sm btn-icon" aria-label="关闭" @click="close">✕</button>
         </header>
         <div class="app-modal-body">
           <slot />
@@ -46,8 +46,8 @@ function close() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.55);
-  padding: 16px;
+  padding: var(--space-4);
+  background: rgb(0 0 0 / 0.6);
 }
 
 .app-modal {
@@ -55,58 +55,31 @@ function close() {
   max-height: calc(100vh - 32px);
   display: flex;
   flex-direction: column;
-  background: var(--c-surface);
-  border: 1px solid var(--c-border);
-  border-radius: 10px;
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
   overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-pop);
 }
 
 .app-modal-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 14px 16px;
-  border-bottom: 1px solid var(--c-border);
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
 }
+.app-modal-title { margin: 0; font-size: var(--text-lg); font-weight: 600; color: var(--text); }
 
-.app-modal-title {
-  margin: 0;
-  font-size: 14px;
-  font-weight: 600;
-  color: #fff;
-}
-
-.app-modal-close {
-  flex-shrink: 0;
-  width: 28px;
-  height: 28px;
-  border: none;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--c-text-3);
-  font-size: 20px;
-  line-height: 1;
-  cursor: pointer;
-}
-.app-modal-close:hover {
-  background: var(--c-card);
-  color: var(--c-text);
-}
-
-.app-modal-body {
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px;
-}
+.app-modal-body { flex: 1; overflow-y: auto; padding: var(--space-4); }
 
 .app-modal-footer {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 8px;
-  padding: 12px 16px;
-  border-top: 1px solid var(--c-border);
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--border-subtle);
 }
 </style>

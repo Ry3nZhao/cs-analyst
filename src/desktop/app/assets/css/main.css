@@ -1,45 +1,405 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+/*
+ * CS Analyst 设计 token
+ * 原则：界面以黑白灰为主，颜色只承担两种职责
+ *   1. 功能语义：success / warning / danger / info、T / CT、数值好坏
+ *   2. 视觉引导：--accent，用于当前选中、焦点、进度、需要注意的点
+ * 说明见 docs/ui.md。新页面只用下面的语义 token，不要直接写十六进制颜色。
+ */
 :root {
   color-scheme: dark;
 
-  --c-bg:         #13141f;
-  --c-sidebar:    #171923;
-  --c-surface:    #1d2030;
-  --c-card:       #222436;
-  --c-card-hover: #272a3f;
-  --c-border:     #2a2d40;
-  --c-border-sub: #1e2130;
+  /* ── 灰阶（10 级，无色相） ── */
+  --gray-0:   #f4f4f5;
+  --gray-100: #d9d9de;
+  --gray-200: #a9a9b1;
+  --gray-300: #7c7c86;
+  --gray-400: #56565e;
+  --gray-500: #3a3a40;
+  --gray-600: #2a2a2f;
+  --gray-700: #1f1f23;
+  --gray-800: #18181b;
+  --gray-900: #111113;
+  --gray-950: #0a0a0b;
 
-  --c-accent:     #7c3aed;
-  --c-accent-lt:  #a78bfa;
-  --c-accent-bg:  rgba(124, 58, 237, 0.12);
-  --c-accent-bdr: rgba(124, 58, 237, 0.28);
+  /* ── 背景与表面 ── */
+  --bg:             var(--gray-950);  /* 应用底色 */
+  --bg-sunken:      var(--gray-900);  /* 侧边栏、二级导航 */
+  --surface:        var(--gray-800);  /* 卡片、表格容器、抽屉 */
+  --surface-raised: var(--gray-700);  /* 弹层、输入框、悬停行 */
+  --surface-hover:  #ffffff0a;        /* 叠加在任意表面上的悬停 */
+  --surface-active: #ffffff12;        /* 选中态底色 */
 
-  --c-text:       #dde0f0;
-  --c-text-2:     #8892b5;
-  --c-text-3:     #5c647a;
-  --c-text-faint: #3d4460;
+  /* ── 边框 ── */
+  --border-subtle: var(--gray-700);   /* 表格行分隔、区块内分隔 */
+  --border:        var(--gray-600);   /* 卡片、输入框 */
+  --border-strong: var(--gray-500);   /* 悬停、分组强调 */
 
-  --c-success:    #22d3a0;
-  --c-warning:    #f59e0b;
-  --c-error:      #f16060;
-  --c-info:       #60a5fa;
+  /* ── 文字（三级 + 禁用） ── */
+  --text:          var(--gray-0);     /* 一级：标题、关键数字、正文 */
+  --text-2:        var(--gray-200);   /* 二级：普通单元格、说明 */
+  --text-3:        var(--gray-300);   /* 三级：表头、标签、时间 */
+  --text-disabled: var(--gray-400);   /* 占位符、破折号、禁用 */
+  --text-inverse:  var(--gray-950);   /* 白底按钮上的文字 */
+
+  /* ── 引导强调色（唯一的非语义彩色） ── */
+  --accent:      #3ccfdc;
+  --accent-soft: color-mix(in srgb, var(--accent) 14%, transparent);
+  --accent-line: color-mix(in srgb, var(--accent) 40%, transparent);
+  --focus-ring:  0 0 0 2px color-mix(in srgb, var(--accent) 45%, transparent);
+
+  /* ── 功能语义色 ── */
+  --success: #4cc38a;
+  --warning: #f0c75e;
+  --danger:  #f0686a;
+  --info:    #8ab4f8;
+  --t-side:  #e39b3c;   /* T 方：金橙 */
+  --ct-side: #4f8fe6;   /* CT 方：蓝 */
+
+  --success-soft: color-mix(in srgb, var(--success) 13%, transparent);
+  --warning-soft: color-mix(in srgb, var(--warning) 13%, transparent);
+  --danger-soft:  color-mix(in srgb, var(--danger) 13%, transparent);
+  --info-soft:    color-mix(in srgb, var(--info) 13%, transparent);
+  --t-side-soft:  color-mix(in srgb, var(--t-side) 15%, transparent);
+  --ct-side-soft: color-mix(in srgb, var(--ct-side) 15%, transparent);
+
+  --success-line: color-mix(in srgb, var(--success) 35%, transparent);
+  --warning-line: color-mix(in srgb, var(--warning) 35%, transparent);
+  --danger-line:  color-mix(in srgb, var(--danger) 35%, transparent);
+  --info-line:    color-mix(in srgb, var(--info) 35%, transparent);
+  --t-side-line:  color-mix(in srgb, var(--t-side) 40%, transparent);
+  --ct-side-line: color-mix(in srgb, var(--ct-side) 40%, transparent);
+
+  /* 数值好坏：good = success，bad = danger，中性不上色 */
+  --value-good: var(--success);
+  --value-bad:  var(--danger);
+
+  /* ── 圆角 ── */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-full: 999px;
+
+  /* ── 间距（4px 基准） ── */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* ── 字号 ── */
+  --font-sans: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Microsoft YaHei UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Cascadia Mono', Consolas, ui-monospace, monospace;
+  --text-xs:  11px;  /* 表头、标签、辅助信息 */
+  --text-sm:  12px;  /* 表格、按钮、表单 */
+  --text-md:  13px;  /* 正文、导航 */
+  --text-lg:  15px;  /* 区块标题、抽屉标题 */
+  --text-xl:  20px;  /* 次要大数字 */
+  --text-2xl: 26px;  /* StatTile 大数字 */
+
+  /* ── 控件尺寸 ── */
+  --control-h:    30px;
+  --control-h-sm: 24px;
+  --row-h:        34px;   /* 高密度表格行高 */
+
+  --shadow-pop: 0 8px 24px rgb(0 0 0 / 0.45);
+  --duration: 120ms;
+
+  /* ── 让 @nuxt/ui（Toast、Slideover 等）跟随同一套 token ── */
+  --ui-bg: var(--surface);
+  --ui-bg-muted: var(--surface-raised);
+  --ui-bg-elevated: var(--surface-raised);
+  --ui-bg-accented: var(--gray-600);
+  --ui-bg-inverted: var(--gray-0);
+  --ui-border: var(--border);
+  --ui-border-muted: var(--border-subtle);
+  --ui-border-accented: var(--border-strong);
+  --ui-text: var(--text-2);
+  --ui-text-muted: var(--text-3);
+  --ui-text-dimmed: var(--text-disabled);
+  --ui-text-highlighted: var(--text);
+  --ui-success: var(--success);
+  --ui-warning: var(--warning);
+  --ui-error: var(--danger);
+  --ui-info: var(--info);
+  --ui-radius: var(--radius-md);
 }
+
+/* @nuxt/ui 在 .dark 下会重设一遍 --ui-*，这里再覆盖一次 */
+.dark {
+  --ui-bg: var(--surface);
+  --ui-bg-muted: var(--surface-raised);
+  --ui-bg-elevated: var(--surface-raised);
+  --ui-border: var(--border);
+  --ui-border-muted: var(--border-subtle);
+  --ui-text: var(--text-2);
+  --ui-text-muted: var(--text-3);
+  --ui-text-dimmed: var(--text-disabled);
+  --ui-text-highlighted: var(--text);
+  --ui-success: var(--success);
+  --ui-warning: var(--warning);
+  --ui-error: var(--danger);
+  --ui-info: var(--info);
+}
+
+/* ────────────────────────── 基础 ────────────────────────── */
 
 html, body, #__nuxt {
   height: 100%;
   margin: 0;
   overflow: hidden;
-  background: var(--c-bg);
-  color: var(--c-text);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
-  font-size: 14px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: var(--text-md);
+  line-height: 1.45;
   -webkit-font-smoothing: antialiased;
 }
 
-* { scrollbar-width: thin; scrollbar-color: var(--c-border) transparent; }
-::-webkit-scrollbar { width: 5px; height: 5px; }
+* { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--c-border); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #3a3f58; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: var(--radius-full); border: 2px solid transparent; background-clip: padding-box; }
+::-webkit-scrollbar-thumb:hover { background: var(--border-strong); background-clip: padding-box; }
 
-::selection { background: var(--c-accent-bg); color: var(--c-accent-lt); }
+::selection { background: var(--accent-soft); color: var(--text); }
+
+:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+
+/* 数字一律等宽，便于纵向对齐比较 */
+.num, table, input[type="number"] { font-variant-numeric: tabular-nums; }
+.mono { font-family: var(--font-mono); font-size: var(--text-xs); }
+.muted { color: var(--text-3); }
+.dim { color: var(--text-disabled); }
+.good { color: var(--value-good); }
+.bad { color: var(--value-bad); }
+
+/* ────────────────────────── 按钮 ──────────────────────────
+ * .btn-primary   白底黑字，每个视图最多一个，用于最主要的操作
+ * .btn           默认次要按钮（灰描边）
+ * .btn-ghost     无边框，用于工具栏中的低频操作
+ * .btn-danger    危险操作，默认灰色，悬停才显红
+ * 尺寸：.btn-sm
+ */
+.btn, .btn-primary, .btn-ghost, .btn-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: var(--control-h);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-2);
+  font: 500 var(--text-sm)/1 var(--font-sans);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--duration), border-color var(--duration), color var(--duration);
+}
+.btn:not(:disabled):hover, .btn-danger:not(:disabled):hover {
+  border-color: var(--border-strong);
+  background: var(--surface-raised);
+  color: var(--text);
+}
+.btn-primary {
+  background: var(--gray-0);
+  border-color: var(--gray-0);
+  color: var(--text-inverse);
+  font-weight: 600;
+}
+.btn-primary:not(:disabled):hover { background: var(--gray-100); border-color: var(--gray-100); }
+.btn-ghost { background: transparent; border-color: transparent; color: var(--text-3); }
+.btn-ghost:not(:disabled):hover { background: var(--surface-hover); color: var(--text); }
+.btn-danger:not(:disabled):hover { border-color: var(--danger-line); background: var(--danger-soft); color: var(--danger); }
+.btn-sm { height: var(--control-h-sm); padding: 0 var(--space-2); font-size: var(--text-xs); border-radius: var(--radius-sm); }
+.btn:disabled, .btn-primary:disabled, .btn-ghost:disabled, .btn-danger:disabled { opacity: 0.4; cursor: default; }
+.btn-icon { width: var(--control-h); padding: 0; }
+
+/* ────────────────────────── 表单 ────────────────────────── */
+.input, .select {
+  height: var(--control-h);
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface-raised);
+  color: var(--text);
+  font: var(--text-sm) var(--font-sans);
+  outline: none;
+  min-width: 0;
+  box-sizing: border-box;
+  transition: border-color var(--duration), box-shadow var(--duration);
+}
+.select { padding-right: var(--space-6); cursor: pointer; appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--text-3) 50%), linear-gradient(135deg, var(--text-3) 50%, transparent 50%);
+  background-position: calc(100% - 13px) 50%, calc(100% - 9px) 50%;
+  background-size: 4px 4px;
+  background-repeat: no-repeat;
+}
+.select option { background: var(--surface-raised); color: var(--text); }
+.input::placeholder { color: var(--text-disabled); }
+.input:hover, .select:hover { border-color: var(--border-strong); }
+.input:focus, .select:focus { border-color: var(--accent-line); box-shadow: var(--focus-ring); }
+.input[readonly] { color: var(--text-2); background: var(--surface); cursor: default; }
+.input-sm, .select.input-sm { height: var(--control-h-sm); font-size: var(--text-xs); border-radius: var(--radius-sm); }
+
+.field { display: flex; flex-direction: column; gap: var(--space-1); }
+.field-label { font-size: var(--text-xs); color: var(--text-3); }
+.field-hint { font-size: var(--text-xs); color: var(--text-disabled); line-height: 1.4; }
+.form-error {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--danger-line);
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-size: var(--text-sm);
+}
+
+/* 提示条：.callout + .callout-warning / -danger / -info */
+.callout {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  border-left-width: 3px;
+  background: var(--surface);
+  color: var(--text-2);
+  font-size: var(--text-sm);
+}
+.callout-warning { border-left-color: var(--warning); }
+.callout-danger  { border-left-color: var(--danger); }
+.callout-info    { border-left-color: var(--info); }
+.callout a { color: var(--text); text-decoration: underline; text-underline-offset: 2px; }
+
+/* 开关：<button class="toggle" :class="{ on }"><span class="toggle-knob" /></button> */
+.toggle {
+  position: relative;
+  flex-shrink: 0;
+  width: 32px;
+  height: 18px;
+  padding: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-full);
+  background: var(--surface-raised);
+  cursor: pointer;
+  transition: background var(--duration), border-color var(--duration);
+}
+.toggle-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  display: block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--text-3);
+  transition: transform var(--duration), background var(--duration);
+}
+.toggle.on { background: var(--gray-0); border-color: var(--gray-0); }
+.toggle.on .toggle-knob { transform: translateX(14px); background: var(--text-inverse); }
+.toggle.sm { width: 28px; height: 16px; }
+.toggle.sm .toggle-knob { width: 10px; height: 10px; }
+.toggle.sm.on .toggle-knob { transform: translateX(12px); }
+
+/* ────────────────────────── 容器 ────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+}
+.card-pad { padding: var(--space-4) var(--space-5); }
+
+/* ────────────────────────── 高密度表格 ──────────────────────────
+ * <div class="table-wrap"><table class="data-table">…</table></div>
+ * 修饰：
+ *   th.num / td.num   右对齐 + 等宽数字（所有数值列都应该这样）
+ *   td.strong         一级文字（主键列：玩家名、地图）
+ *   td.muted          三级文字（时间、路径）
+ *   td.truncate       单行省略
+ *   tr.clickable      整行可点
+ *   tr.selected       当前选中行（左侧强调色竖条）
+ *   .data-table.compact  行高再压缩，用于计分板等密集场景
+ */
+.table-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  overflow: auto;
+  min-height: 0;
+}
+.data-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: var(--text-sm); }
+.data-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  height: 30px;
+  padding: 0 var(--space-3);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  color: var(--text-3);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  text-align: left;
+  white-space: nowrap;
+}
+.data-table tbody td {
+  height: var(--row-h);
+  padding: 0 var(--space-3);
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-2);
+  vertical-align: middle;
+}
+.data-table tbody tr:last-child td { border-bottom: none; }
+.data-table tbody tr:hover td { background: var(--surface-hover); }
+.data-table tr.clickable { cursor: pointer; }
+.data-table tr.selected td { background: var(--surface-active); }
+.data-table tr.selected td:first-child { box-shadow: inset 2px 0 0 var(--accent); }
+.data-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.data-table .strong { color: var(--text); font-weight: 500; }
+.data-table .muted { color: var(--text-3); }
+.data-table .truncate { max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.data-table .nowrap { white-space: nowrap; }
+.data-table .actions { width: 1%; white-space: nowrap; text-align: right; }
+.data-table .actions > * + * { margin-left: var(--space-1); }
+.data-table td.empty {
+  height: auto;
+  padding: var(--space-8) var(--space-4);
+  text-align: center;
+  color: var(--text-disabled);
+}
+.data-table.compact tbody td { height: 28px; padding: 0 var(--space-2); }
+.data-table.compact thead th { height: 26px; padding: 0 var(--space-2); }
+
+/* 分类标签（来源、地图池、模式等），永远是灰色；状态用 <StatusChip> */
+.tag {
+  display: inline-block;
+  max-width: 180px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface-raised);
+  color: var(--text-2);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  line-height: 18px;
+  vertical-align: middle;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+/* 抽屉 / 弹窗里的键值对 */
+.kv-grid { display: grid; grid-template-columns: 96px 1fr; gap: var(--space-2) var(--space-3); font-size: var(--text-sm); }
+.kv-grid > dt { color: var(--text-3); }
+.kv-grid > dd { margin: 0; color: var(--text-2); word-break: break-all; white-space: pre-wrap; }
+
+/* 进度条：<div class="progress"><div class="progress-fill" :style="{width}"/></div> */
+.progress { height: 4px; border-radius: var(--radius-full); background: var(--border); overflow: hidden; }
+.progress-fill { height: 100%; background: var(--accent); transition: width 0.3s; }
