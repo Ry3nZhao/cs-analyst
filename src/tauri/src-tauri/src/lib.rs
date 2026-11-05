@@ -123,6 +123,7 @@ pub fn run() {
             commands::get_analysis_status,
             crate::stats::commands::get_match_detail,
             crate::stats::commands::list_player_stats,
+            crate::stats::commands::get_round_win_probability,
             identity::commands::search_persons,
             identity::commands::get_person,
             identity::commands::get_head_to_head,

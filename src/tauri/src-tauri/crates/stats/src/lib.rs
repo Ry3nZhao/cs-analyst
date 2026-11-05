@@ -15,8 +15,10 @@
 
 mod compute;
 mod econ;
+pub mod swing;
 
-pub use compute::compute;
+pub use compute::{compute, compute_with_model};
+pub use swing::{BucketSample, RoundWinProbability, WinModel, WinProbPoint};
 pub use demo_parse::{TEAM_CT, TEAM_T};
 pub use econ::BuyType;
 
@@ -24,7 +26,7 @@ use demo_parse::{BombEvent, Blind, Damage, Economy, Grenade, Kill, ParsedDemo, P
 use serde::{Deserialize, Serialize};
 
 /// Bump when any metric definition changes; stored rows with an older version are recomputed.
-pub const STATS_VERSION: i32 = 1;
+pub const STATS_VERSION: i32 = 2;
 
 /// Trade window in seconds (a death is "traded" if the killer dies within this time).
 pub const TRADE_WINDOW_SECS: f32 = 5.0;
@@ -136,6 +138,11 @@ pub struct MatchStats {
     pub rounds: Vec<RoundSummary>,
     /// attacker × victim totals over enemy interactions only.
     pub pairs: Vec<PairStats>,
+    /// Per-round T win-probability curves (Swing model, see [`swing`]).
+    pub win_probability: Vec<RoundWinProbability>,
+    /// State buckets visited by this match's rounds, for local smoothing of the win model.
+    #[serde(skip)]
+    pub swing_samples: Vec<BucketSample>,
 }
 
 /// One player's totals for one match. Counts are additive across matches (see [`PlayerMatchStats::add`]);
@@ -209,6 +216,9 @@ pub struct PlayerMatchStats {
     pub fire_damage: u32,
     /// Approximate value of grenades still held at death (summed over deaths).
     pub unused_utility_value: u32,
+    /// Sum of per-round Swing, in percentage points of round win probability.
+    #[serde(default)]
+    pub swing_total: f32,
 
     /// Derived values (filled by `finalize`).
     #[serde(default)]
@@ -244,6 +254,9 @@ pub struct Derived {
     pub enemies_flashed_per_flash: Option<f32>,
     pub enemy_blind_seconds_per_flash: Option<f32>,
     pub teammates_flashed_per_flash: Option<f32>,
+    /// Average Swing per round played, in percentage points (`swing_total / rounds_played`).
+    #[serde(default)]
+    pub swing: f32,
 }
 
 fn ratio(a: f32, b: f32) -> f32 {
@@ -266,7 +279,7 @@ impl PlayerMatchStats {
             opening_deaths_t, opening_kills_ct, opening_deaths_ct, trade_kill_opportunities, trade_kill_attempts,
             trade_kills, traded_death_opportunities, traded_deaths, clutch_kills, flashes_thrown, he_thrown,
             smokes_thrown, molotovs_thrown, decoys_thrown, he_damage, he_team_damage, fire_damage,
-            unused_utility_value
+            unused_utility_value, swing_total
         );
         for i in 0..6 {
             self.multi_kills[i] += o.multi_kills[i];
@@ -325,6 +338,7 @@ impl PlayerMatchStats {
             enemies_flashed_per_flash: self.enemies_flashed.map(|v| ratio(v as f32, flashes)),
             enemy_blind_seconds_per_flash: self.enemy_blind_seconds.map(|v| ratio(v, flashes)),
             teammates_flashed_per_flash: self.teammates_flashed.map(|v| ratio(v as f32, flashes)),
+            swing: ratio(self.swing_total, r),
         };
     }
 }
@@ -363,6 +377,8 @@ pub struct PlayerRoundStats {
     pub utility_thrown: u32,
     pub enemies_flashed: Option<u32>,
     pub unused_utility_value: u32,
+    /// Swing this round, in percentage points of round win probability.
+    pub swing: f32,
 }
 
 /// One team in one round.

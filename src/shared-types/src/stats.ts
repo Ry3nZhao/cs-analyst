@@ -1,5 +1,6 @@
-// Derived match / player statistics (W1-B). Mirrors the JSON of the Rust commands
-// `get_match_detail` and `list_player_stats` (src/tauri/src-tauri/src/stats, crates/stats).
+// Derived match / player statistics (W1-B) and Swing (W2-B). Mirrors the JSON of the Rust commands
+// `get_match_detail`, `list_player_stats` and `get_round_win_probability`
+// (src/tauri/src-tauri/src/stats, crates/stats).
 // Metric definitions: docs/stats.md.
 
 /** Steam64 as a decimal string (exceeds Number.MAX_SAFE_INTEGER). */
@@ -37,6 +38,11 @@ export interface DerivedStatsDto {
   enemiesFlashedPerFlash: number | null;
   enemyBlindSecondsPerFlash: number | null;
   teammatesFlashedPerFlash: number | null;
+  /**
+   * Average Swing per round played, in percentage points of round win probability
+   * (e.g. 3.2 = +3.2 %). `swingTotal / roundsPlayed`. See docs/stats.md「Swing」.
+   */
+  swing: number;
 }
 
 /**
@@ -111,6 +117,8 @@ export interface PlayerMatchStatsDto {
   fireDamage: number;
   /** Approximate value of grenades still held at death, summed over deaths. */
   unusedUtilityValue: number;
+  /** Sum of per-round Swing (percentage points); additive across matches. */
+  swingTotal: number;
 
   derived: DerivedStatsDto;
 }
@@ -144,6 +152,8 @@ export interface PlayerRoundStatsDto {
   utilityThrown: number;
   enemiesFlashed: number | null;
   unusedUtilityValue: number;
+  /** Swing this round, in percentage points of round win probability. */
+  swing: number;
 }
 
 /** One team in one round (economy curve + score progression). */
@@ -282,4 +292,75 @@ export interface PlayerStatsListDto {
   summary: PlayerMatchStatsDto | null;
   /** Newest first. */
   matches: PlayerMatchRowDto[];
+}
+
+// ---- Swing: round win probability (W2-B) ----
+
+export type WinProbEventKind =
+  | 'start'
+  | 'damage'
+  | 'kill'
+  | 'team_kill'
+  | 'suicide'
+  | 'world'
+  | 'planted'
+  | 'defused'
+  | 'exploded'
+  | 'end';
+
+/**
+ * One event of a round's win-probability curve. Between two points the probability drifts with time
+ * (from the previous `pAfter` to this `pBefore`, roughly linearly), then jumps to `pAfter`.
+ */
+export interface WinProbPointDto {
+  tick: number;
+  /** Seconds since freeze end. */
+  timeSecs: number;
+  kind: WinProbEventKind;
+  /** Attacker / planter / defuser; null for start, end and world deaths. */
+  player: SteamId | null;
+  /** Victim of a kill or damage event. */
+  victim: SteamId | null;
+  /** Alive counts after the event. */
+  tAlive: number;
+  ctAlive: number;
+  bombPlanted: boolean;
+  /** T win probability, 0–1. The CT probability is 1 − p. */
+  pBefore: number;
+  pAfter: number;
+}
+
+export interface RoundWinProbabilityDto {
+  round: number;
+  winnerSide: Side | null;
+  /** T win probability at freeze end. */
+  pStart: number;
+  /** First point is `start`, last is `end` (pAfter = 1 if T won, 0 if CT won). */
+  points: WinProbPointDto[];
+}
+
+export interface WinModelInfoDto {
+  /** Rounds in the local library behind the model's bucket samples. */
+  localRounds: number;
+  /** false while the library is too small (built-in prior only). */
+  usesLocalData: boolean;
+}
+
+export interface PlayerRoundSwingDto {
+  round: number;
+  steamid: SteamId;
+  team: TeamId;
+  side: Side;
+  /** Percentage points of round win probability. */
+  swing: number;
+}
+
+/** `get_round_win_probability(matchId)`; null if the match is unknown or not analyzed yet. */
+export interface MatchWinProbabilityDto {
+  matchId: string;
+  statsVersion: number;
+  tickRate: number;
+  model: WinModelInfoDto;
+  rounds: RoundWinProbabilityDto[];
+  playerRounds: PlayerRoundSwingDto[];
 }

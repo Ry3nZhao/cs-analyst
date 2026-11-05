@@ -1,5 +1,6 @@
 //! Derived statistics (W1-B): compute with the `stats` crate after each ingest, persist to the
 //! migration-003 tables, backfill on startup, and serve the match-detail / player-stats commands.
+//! Swing (W2-B) rides along: migration-006 columns / tables, `get_round_win_probability`.
 
 pub mod commands;
 pub mod repo;
@@ -15,7 +16,8 @@ fn log(msg: impl AsRef<str>) {
 /// Called by the analysis worker right after a successful ingest (DB lock held). Failures are
 /// logged only: event data stays valid and the startup backfill retries.
 pub fn on_match_ingested(db: &Database, match_id: &str, demo: &demo_parse::ParsedDemo) {
-    let s = ::stats::compute(demo.into());
+    let model = repo::load_win_model(db).unwrap_or_default();
+    let s = ::stats::compute_with_model(demo.into(), &model);
     if let Err(e) = repo::replace_match_stats(db, match_id, &s) {
         log(format!("write failed {match_id}: {e}"));
     }
@@ -27,7 +29,7 @@ pub fn recompute_from_db(db: &Database, match_id: &str) -> Result<Option<::stats
     if ev.rounds.is_empty() {
         return Ok(None);
     }
-    let s = ::stats::compute(ev.view());
+    let s = ::stats::compute_with_model(ev.view(), &repo::load_win_model(db)?);
     repo::replace_match_stats(db, match_id, &s)?;
     Ok(Some(s))
 }
@@ -127,6 +129,38 @@ mod tests {
         let board_kills: u64 = detail.scoreboard.iter().map(|p| p.kills as u64).sum();
         assert_eq!(duel_kills, board_kills);
         assert!(commands::build_detail_for_test(&db, "nope").unwrap().is_none());
+
+        // Swing: stored columns / tables and the two command shapes.
+        assert!(j["scoreboard"][0]["derived"]["swing"].is_number());
+        assert!(j["playerRounds"][0]["swing"].is_number());
+        let stored: f64 = db
+            .conn
+            .query_row("SELECT swing FROM player_match_stats WHERE match_id='m1' AND steamid=?", params![76561198000000042i64], |r| r.get(0))
+            .unwrap();
+        assert!((stored as f32 - mine.derived.swing).abs() < 1e-4);
+        let curve_rows = count("round_win_probability");
+        let points: usize = from_demo.win_probability.iter().map(|r| r.points.len()).sum();
+        assert_eq!(curve_rows as usize, points);
+        assert!(count("win_prob_samples") > 5);
+        let wp = commands::build_win_probability_for_test(&db, "m1").unwrap().unwrap();
+        let w = serde_json::to_value(&wp).unwrap();
+        assert_eq!(w["rounds"].as_array().unwrap().len(), 15);
+        assert_eq!(w["playerRounds"].as_array().unwrap().len(), 148);
+        assert_eq!(w["model"]["usesLocalData"], false, "one match is below the local threshold");
+        assert_eq!(w["model"]["localRounds"], 15);
+        let last = w["rounds"][0]["points"].as_array().unwrap().last().unwrap().clone();
+        assert_eq!(last["kind"], "end");
+        assert!(last["pAfter"] == 0.0 || last["pAfter"] == 1.0);
+        assert!(w["playerRounds"][0]["steamid"].is_string());
+        assert!(commands::build_win_probability_for_test(&db, "nope").unwrap().is_none());
+        // Once the library is large enough the local samples change the model.
+        let model = repo::load_win_model(&db).unwrap();
+        assert!(!model.uses_local());
+        let local = ::stats::WinModel::with_local(
+            [::stats::BucketSample { t_alive: 5, ct_alive: 5, planted: false, rounds: 600, t_wins: 600 }],
+            600,
+        );
+        assert!(local.base(5, 5, false) > ::stats::swing::prior_base(5, 5, false));
 
         // Outdated stats are picked up by the backfill query; cascade on delete.
         db.conn.execute("UPDATE player_match_stats SET stats_version = 0 WHERE match_id = 'm1'", []).unwrap();
