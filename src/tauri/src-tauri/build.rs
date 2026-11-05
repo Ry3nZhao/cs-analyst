@@ -77,6 +77,7 @@ const COMMANDS: &[&str] = &[
     "list_backups",
     "restore_backup",
     "inspect_backup",
+    "list_highlights", "get_highlight_settings", "update_highlight_settings", "recompute_highlights", "prepare_highlight_playback", "launch_highlight_in_cs2",
 ];
 
 fn main() {

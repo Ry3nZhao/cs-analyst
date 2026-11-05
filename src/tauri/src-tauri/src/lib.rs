@@ -11,6 +11,7 @@ mod stats;
 mod training;
 mod watch;
 mod storage;
+mod highlights;
 
 use analysis::AnalysisQueue;
 use database::{repo, Database};
@@ -49,6 +50,7 @@ pub fn run() {
             stats::spawn_backfill(db.clone());
             aim::start_backfill(db.clone());
             storage::init(db.clone());
+            highlights::start_backfill(db.clone());
             let orchestrator = Arc::new(DownloadOrchestrator::new(db.clone(), sidecar.clone(), analysis.clone()));
             orchestrator.wire_sidecar_events(app.handle().clone());
             orchestrator.sync_adapter_switches();
@@ -185,6 +187,7 @@ pub fn run() {
             storage::commands::list_backups,
             storage::commands::restore_backup,
             storage::commands::inspect_backup,
+            highlights::commands::list_highlights, highlights::commands::get_highlight_settings, highlights::commands::update_highlight_settings, highlights::commands::recompute_highlights, highlights::commands::prepare_highlight_playback, highlights::commands::launch_highlight_in_cs2,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

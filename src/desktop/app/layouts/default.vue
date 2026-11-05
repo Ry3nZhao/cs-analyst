@@ -109,6 +109,7 @@ const titles: Record<string, string> = {
   '/players': '选手',
   '/aim': '枪法与压枪',
   '/training': '训练',
+  '/highlights': '集锦',
   '/accounts': '账户管理',
   '/settings': '系统设置',
 };
@@ -164,6 +165,11 @@ const nav = [
     to: '/training',
     label: '训练',
     icon: navIcon('M12 2v4M12 18v4M2 12h4M18 12h4M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z'),
+  },
+  {
+    to: '/highlights',
+    label: '集锦',
+    icon: navIcon('M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z'),
   },
   {
     to: '/accounts',
