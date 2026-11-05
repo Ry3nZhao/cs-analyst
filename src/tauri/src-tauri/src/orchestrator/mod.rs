@@ -1096,6 +1096,16 @@ impl DownloadOrchestrator {
         app: &AppHandle,
         file_path: &str,
     ) -> Result<String, OrchestratorError> {
+        self.import_demo_opts(app, file_path, false)
+    }
+
+    /// `copy = true`：复制而不是移动源文件（W3-C 监听 CS2 replays 目录，不能挪走游戏自己的文件）
+    pub fn import_demo_opts(
+        self: &Arc<Self>,
+        app: &AppHandle,
+        file_path: &str,
+        copy: bool,
+    ) -> Result<String, OrchestratorError> {
         let path = Path::new(file_path);
         if !path.exists() {
             return Err(OrchestratorError::Message(format!("文件不存在: {file_path}")));
@@ -1176,7 +1186,9 @@ impl DownloadOrchestrator {
             return Ok("skipped".to_string());
         }
 
-        if !paths_same_file(path, &dest_path) {
+        if copy && !paths_same_file(path, &dest_path) {
+            fs::copy(path, &dest_path).map_err(|e| OrchestratorError::Message(format!("复制文件失败: {e}")))?;
+        } else if !paths_same_file(path, &dest_path) {
             move_demo_into_place(path, &dest_path)?;
         }
 

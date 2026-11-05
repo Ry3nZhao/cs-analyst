@@ -3,14 +3,16 @@ mod analysis;
 mod commands;
 mod database;
 mod identity;
+mod onboarding;
 mod orchestrator;
 mod replay;
 mod sidecar;
 mod stats;
 mod training;
+mod watch;
 
 use analysis::AnalysisQueue;
-use database::{repo, resolve_data_root, Database};
+use database::{repo, Database};
 use orchestrator::DownloadOrchestrator;
 use parking_lot::Mutex;
 use sidecar::{resolve_sidecar_script, SidecarManager};
@@ -29,8 +31,10 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_notification::init())
+        .on_window_event(onboarding::on_window_event)
         .setup(|app| {
-            let data_root = resolve_data_root(app.handle());
+            let data_root = onboarding::resolve_data_root(app.handle());
             let database = Database::open(data_root).expect("failed to open database");
             repo::sync_data_root_setting(&database).expect("failed to sync data_root setting");
             let _ = repo::reset_interrupted_downloads(&database);
@@ -60,6 +64,7 @@ pub fn run() {
                 orchestrator: orchestrator.clone(),
                 analysis: analysis.clone(),
             });
+            onboarding::init(app.handle());
 
             // 补齐历史对局的完整解析（中断 / 失败可重试 / 解析器版本升级）
             {
@@ -155,6 +160,17 @@ pub fn run() {
             training::commands::delete_training_result,
             training::commands::detect_cs2_sensitivity,
             training::commands::read_cs2_sensitivity,
+            onboarding::commands::get_main_player,
+            onboarding::commands::set_main_player,
+            onboarding::commands::list_main_player_candidates,
+            onboarding::commands::get_onboarding_state,
+            onboarding::commands::complete_onboarding,
+            onboarding::commands::set_data_root,
+            onboarding::commands::get_experience_settings,
+            onboarding::commands::update_experience_settings,
+            onboarding::commands::get_watch_status,
+            onboarding::commands::detect_replays_dir,
+            onboarding::commands::send_test_notification,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

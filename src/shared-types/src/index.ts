@@ -166,3 +166,4 @@ export * from './aim.js';
 export * from './downloader.js';
 export * from './replay.js';
 export * from './training.js';
+export * from './onboarding.js';
