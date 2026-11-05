@@ -665,6 +665,7 @@ dependencies = [
  "tokio",
  "uuid",
  "winreg 0.56.0",
+ "zstd",
 ]
 
 [[package]]
