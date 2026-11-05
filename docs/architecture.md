@@ -75,6 +75,7 @@ SQLite 单文件数据库，迁移文件在 `migrations/sqlite/`，通过 `PRAGM
 |---|---|
 | 001 | `users` / `sub_accounts`（用户与子账号）、`matches`（发现 + 下载 + 文件头元数据）、`sync_cursors`、`app_settings` / `platform_settings` / `valve_bot_config` |
 | 002 | `matches.analysis_*`（解析状态）、`match_players`、`rounds`、`kills`、`damages`、`shots`、`grenades`、`blinds`、`bomb_events`、`purchases`、`economies` |
+| 003 | `player_match_stats`、`player_round_stats`、`team_round_stats`（派生指标，口径见 [stats.md](stats.md)） |
 
 约定：SteamID 存为 INTEGER（Steam64）；队伍编号 2 = T、3 = CT；所有解析表都随对局级联删除。
 

@@ -30,6 +30,8 @@ const COMMANDS: &[&str] = &[
     "force_download_now",
     "reanalyze_matches",
     "get_analysis_status",
+    "get_match_detail",
+    "list_player_stats",
 ];
 
 fn main() {

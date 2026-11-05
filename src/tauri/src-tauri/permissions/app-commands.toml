@@ -33,4 +33,6 @@ permissions = [
   "allow-import-demos",
   "allow-refresh-match-metadata",
   "allow-force-download-now",
+  "allow-get-match-detail",
+  "allow-list-player-stats",
 ]
