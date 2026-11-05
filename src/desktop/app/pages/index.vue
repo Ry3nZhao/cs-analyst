@@ -143,7 +143,7 @@
                   <template v-else-if="m.value != null">{{ m.matchesWithData }} 场有数据</template>
                   <template v-else>{{ naReason(m.key) }}</template>
                 </div>
-                <PercentileBar :p="m.percentile" :available="m.value != null" />
+                <ProfilePercentileBar :p="m.percentile" :available="m.value != null" />
               </button>
             </div>
           </section>
@@ -427,7 +427,7 @@ const sampleDesc = computed(() => {
   if (!p) return '';
   const s = p.sample;
   const tier = p.tier
-    ? `段位：${p.tier.systemLabel} ${p.tier.score}（${p.tier.bandLabel}）`
+    ? `段位：${p.tier.systemLabel} ${p.tier.score} · ${p.tier.bandLabel}`
     : '库里没有你的平台分数，无法分段位';
   let pool: string;
   if (p.tier && s.tierPlayers >= s.minTierSample) pool = `百分位按同段位 ${s.tierPlayers} 名选手计算`;
