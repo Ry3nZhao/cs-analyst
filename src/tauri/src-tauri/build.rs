@@ -55,6 +55,7 @@ const COMMANDS: &[&str] = &[
     "detect_cs2_sensitivity",
     "read_cs2_sensitivity",
     "get_main_player",
+    "get_profile",
     "set_main_player",
     "list_main_player_candidates",
     "get_onboarding_state",
