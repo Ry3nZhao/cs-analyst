@@ -24,6 +24,7 @@ pub type Result<T> = std::result::Result<T, DbError>;
 const MIGRATIONS: &[(&str, i32)] = &[
     (include_str!("../../../../../migrations/sqlite/001_initial.sql"), 1),
     (include_str!("../../../../../migrations/sqlite/002_analysis.sql"), 2),
+    (include_str!("../../../../../migrations/sqlite/005_aim.sql"), 5),
 ];
 
 pub struct Database {

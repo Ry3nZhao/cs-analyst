@@ -184,6 +184,7 @@ impl AnalysisQueue {
                             demo.kills.len(),
                             demo.shots.len()
                         ));
+                        crate::aim::analyze_match(&self.db, id, &path, Some(&demo));
                         self.emit(id, "done", None);
                     }
                     Err(e) => {

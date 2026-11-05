@@ -30,6 +30,8 @@ permissions = [
   "allow-open-data-subdirectory",
   "allow-reanalyze-matches",
   "allow-get-analysis-status",
+  "allow-get-aim-stats",
+  "allow-get-sprays",
   "allow-import-demos",
   "allow-refresh-match-metadata",
   "allow-force-download-now",

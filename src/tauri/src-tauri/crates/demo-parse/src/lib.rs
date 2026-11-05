@@ -9,9 +9,11 @@
 //! Anything that needs every tick (TTD, crosshair placement…) re-parses the `.dem` later; parsing
 //! is fast enough (~1 s per match) that storing full-rate tick data is not worth the disk.
 
+pub mod engagement;
 pub mod model;
 pub mod replay;
 
+pub use engagement::{parse_engagements_bytes, parse_engagements_file, EngagementOptions, Engagements};
 pub use model::*;
 pub use replay::Replay;
 

@@ -1,3 +1,4 @@
+mod aim;
 mod analysis;
 mod commands;
 mod database;
@@ -34,6 +35,7 @@ pub fn run() {
             let sidecar = Arc::new(SidecarManager::new(script));
             let analysis = AnalysisQueue::new(db.clone());
             analysis.start(app.handle().clone());
+            aim::start_backfill(db.clone());
             let orchestrator = Arc::new(DownloadOrchestrator::new(db.clone(), sidecar.clone(), analysis.clone()));
             orchestrator.wire_sidecar_events(app.handle().clone());
             let _ = sidecar.start();
@@ -115,6 +117,8 @@ pub fn run() {
             commands::force_download_now,
             commands::reanalyze_matches,
             commands::get_analysis_status,
+            aim::commands::get_aim_stats,
+            aim::commands::get_sprays,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -32,6 +32,7 @@ tokio = { version = "1", features = ["full"] }
 dirs = "6"
 open = "5"
 demo-parse = { path = "crates/demo-parse" }
+aim = { path = "crates/aim" }
 
 [profile.release]
 # unwind（而非 abort）：demo 解析器遇到损坏文件可能 panic，由分析 worker 捕获，不能让整个应用退出
