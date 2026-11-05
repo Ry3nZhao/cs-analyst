@@ -105,6 +105,7 @@ const route = useRoute();
 const { status, logs, logOpen, refreshStatus, listenBackgroundWork } = useAppStatus();
 
 const titles: Record<string, string> = {
+  '/': '个人主页',
   '/matches': '对局',
   '/players': '选手',
   '/aim': '枪法与压枪',
@@ -126,6 +127,7 @@ function navIcon(d: string) {
 }
 
 const nav = [
+  { to: '/', label: '主页', icon: navIcon('M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z') },
   {
     to: '/matches',
     label: '对局',

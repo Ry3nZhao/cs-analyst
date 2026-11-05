@@ -169,3 +169,4 @@ export * from './training.js';
 export * from './onboarding.js';
 export * from './storage.js';
 export * from './highlights.js';
+export * from './profile.js';

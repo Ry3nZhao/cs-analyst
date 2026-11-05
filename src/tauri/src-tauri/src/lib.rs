@@ -4,6 +4,7 @@ mod commands;
 mod database;
 mod identity;
 mod onboarding;
+mod profile;
 mod orchestrator;
 mod replay;
 mod sidecar;
@@ -165,6 +166,7 @@ pub fn run() {
             training::commands::detect_cs2_sensitivity,
             training::commands::read_cs2_sensitivity,
             onboarding::commands::get_main_player,
+            profile::commands::get_profile,
             onboarding::commands::set_main_player,
             onboarding::commands::list_main_player_candidates,
             onboarding::commands::get_onboarding_state,

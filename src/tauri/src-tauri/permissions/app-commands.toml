@@ -71,6 +71,7 @@ permissions = [
   "allow-list-player-stats",
   "allow-get-round-win-probability",
   "allow-get-main-player",
+  "allow-get-profile",
   "allow-set-main-player",
   "allow-list-main-player-candidates",
   "allow-get-onboarding-state",
