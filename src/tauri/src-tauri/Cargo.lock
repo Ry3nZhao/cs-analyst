@@ -611,6 +611,9 @@ dependencies = [
  "memmap2",
  "parser",
  "serde",
+ "serde_json",
+ "sha2",
+ "snap",
  "thiserror 2.0.18",
  "zstd",
 ]

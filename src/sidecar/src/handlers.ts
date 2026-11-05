@@ -1,79 +1,89 @@
-#!/usr/bin/env node
-import readline from 'node:readline';
-import type {
-  DiscoverParams,
-  DownloadParams,
-  ResolveValveAuthcodeParams,
-  SidecarEvent,
-} from '@cs-analyst/shared-types';
-import { discover5EPlay, download5EPlay, resolve5EPlayPlayerId } from './adapters/5eplay/index.js';
-import { discoverRenown, downloadRenown } from './adapters/renown/index.js';
-import { discoverValveAuthCode } from './adapters/valve-authcode/discover.js';
-import { downloadValveDemo } from './adapters/valve-authcode/download.js';
-import { resolveValveAuthcodeUrls } from './adapters/valve-downloader/steam-gc.js';
-import { discoverValveLocal, downloadValveLocal } from './adapters/valve-local/index.js';
-import { analyzeDem } from './dem-parser.js';
-import type { JsonRpcServer } from './rpc.js';
+import {
+  PROTOCOL_VERSION,
+  RpcErrorCode,
+  type ConfigureParams,
+  type ConfigureResult,
+  type DiscoverParams,
+  type DownloadParams,
+  type HelloParams,
+  type HelloResult,
+  type PingResult,
+  type Resolve5EPlayPlayerIdParams,
+  type ResolveValveAuthcodeParams,
+  type SidecarEvent,
+} from '@cs-analyst/downloader-protocol';
+import { AdapterRegistry, isPlatform } from './adapters/registry.js';
+import { JsonRpcServer, RpcError } from './rpc.js';
 
-function sidecarLog(message: string, data?: unknown) {
+export const MODULE_NAME = 'cs-analyst-downloader';
+export const MODULE_VERSION = '0.2.0';
+
+export function sidecarLog(message: string, data?: unknown) {
   const extra = data === undefined ? '' : ` ${JSON.stringify(data)}`;
   console.error(`[sidecar] ${message}${extra}`);
 }
 
-export function registerHandlers(server: JsonRpcServer) {
-  const emit = (event: SidecarEvent) => server.emit(event);
+function requireObject<T>(raw: unknown, method: string): T {
+  if (!raw || typeof raw !== 'object') {
+    throw new RpcError(RpcErrorCode.InvalidParams, `${method}: params must be an object`);
+  }
+  return raw as T;
+}
 
-  server.register('discover', async (raw: unknown) => {
-    const params = raw as DiscoverParams;
-    sidecarLog('discover', {
-      platform: params.platform,
-      externalId: params.externalId,
-      valveChannel: params.valveChannel,
-    });
+export function registerHandlers(
+  server: JsonRpcServer,
+  registry: AdapterRegistry = new AdapterRegistry(),
+  options: { onShutdown?: () => void } = {},
+) {
+  const emit = (event: SidecarEvent) => server.emit(event);
+  const startedAt = Date.now();
+  const preload = registry.preload();
+
+  server.register('hello', async (raw): Promise<HelloResult> => {
+    const params = (raw ?? {}) as Partial<HelloParams>;
+    sidecarLog('hello', { hostProtocolVersion: params.protocolVersion, host: params.host });
+    await preload;
+    return {
+      protocolVersion: PROTOCOL_VERSION,
+      module: { name: MODULE_NAME, version: MODULE_VERSION },
+      methods: server.methods(),
+      adapters: registry.info(),
+      pid: process.pid,
+      runtime: process.version,
+    };
+  });
+
+  server.register('ping', async (): Promise<PingResult> => ({
+    pong: true,
+    uptimeMs: Date.now() - startedAt,
+    // 不算 ping 自己
+    inflight: Math.max(0, server.inflight - 1),
+  }));
+
+  server.register('configure', async (raw): Promise<ConfigureResult> => {
+    const params = requireObject<ConfigureParams>(raw, 'configure');
+    for (const [platform, enabled] of Object.entries(params.adapters ?? {})) {
+      if (isPlatform(platform) && typeof enabled === 'boolean') registry.setEnabled(platform, enabled);
+    }
+    sidecarLog('configure', params.adapters);
+    return { adapters: registry.info() };
+  });
+
+  server.register('discover', async (raw) => {
+    const params = requireObject<DiscoverParams>(raw, 'discover');
+    sidecarLog('discover', { platform: params.platform, externalId: params.externalId, valveChannel: params.valveChannel });
     try {
-      switch (params.platform) {
-        case '5eplay':
-          return await discover5EPlay(params.externalId);
-        case 'renown':
-          return await discoverRenown(params.externalId);
-        case 'valve': {
-          const channel = params.valveChannel ?? (params.metadata.source === 'auth_code' ? 'authcode' : 'local');
-          if (channel === 'authcode') {
-            const matches = await discoverValveAuthCode({
-              steamId: params.externalId,
-              authCode: String(params.metadata.auth_code ?? ''),
-              oldestShareCode: String(params.metadata.oldest_share_code ?? ''),
-              steamApiKey: String(params.metadata.steam_api_key ?? ''),
-              lastShareCode: params.metadata.last_share_code as string | undefined,
-            });
-            sidecarLog('discover valve authcode ok', { count: matches.length });
-            return matches;
-          }
-          return discoverValveLocal(params.externalId);
-        }
-        default:
-          throw new Error(`Unknown platform: ${params.platform}`);
-      }
+      const matches = await registry.run(params.platform, (adapter) => adapter.discover(params));
+      sidecarLog('discover ok', { platform: params.platform, count: matches.length });
+      return matches;
     } catch (error) {
-      sidecarLog('discover FAILED', {
-        platform: params.platform,
-        message: error instanceof Error ? error.message : String(error),
-      });
+      sidecarLog('discover FAILED', { platform: params.platform, message: (error as Error).message });
       throw error;
     }
   });
 
-  server.register('resolve_valve_authcode_urls', async (raw: unknown) => {
-    const params = raw as ResolveValveAuthcodeParams;
-    sidecarLog('resolve_valve_authcode_urls', { count: params.items.length });
-    if (!params.bot.username) {
-      throw new Error('Valve bot username is required');
-    }
-    return resolveValveAuthcodeUrls(params.bot, params.items, emit);
-  });
-
-  server.register('download', async (raw: unknown) => {
-    const params = raw as DownloadParams;
+  server.register('download', async (raw) => {
+    const params = requireObject<DownloadParams>(raw, 'download');
     sidecarLog('download', {
       platform: params.platform,
       jobId: params.jobId,
@@ -82,61 +92,45 @@ export function registerHandlers(server: JsonRpcServer) {
       hasDemoUrl: Boolean(params.demoUrl),
     });
     try {
-      switch (params.platform) {
-        case '5eplay':
-          await download5EPlay(params.demoUrl, params.outputPath, {
-            jobId: params.jobId,
-            emit,
-          });
-          break;
-        case 'renown':
-          await downloadRenown(params.demoUrl, params.outputPath, {
-            jobId: params.jobId,
-            emit,
-          });
-          break;
-        case 'valve': {
-          const channel = params.valveChannel ?? 'authcode';
-          if (channel === 'local') {
-            await downloadValveLocal(params.demoUrl, params.outputPath, {
-              jobId: params.jobId,
-              emit,
-            });
-          } else {
-            await downloadValveDemo({
-              outputPath: params.outputPath,
-              demoUrl: params.demoUrl,
-              jobId: params.jobId,
-              emit,
-            });
-          }
-          break;
-        }
-        default:
-          throw new Error(`Unknown platform: ${params.platform}`);
-      }
+      await registry.run(params.platform, (adapter) => adapter.download(params, { emit }));
       sidecarLog('download ok', { jobId: params.jobId });
       return { ok: true };
     } catch (error) {
-      sidecarLog('download FAILED', {
-        jobId: params.jobId,
-        message: error instanceof Error ? error.message : String(error),
-      });
+      sidecarLog('download FAILED', { jobId: params.jobId, message: (error as Error).message });
       throw error;
     }
   });
 
-  server.register('analyze_dem', async (raw: unknown) => {
-    const params = raw as { filePath: string };
-    sidecarLog('analyze_dem', { filePath: params.filePath });
-    return analyzeDem(params.filePath);
+  server.register('resolve_valve_authcode_urls', async (raw) => {
+    const params = requireObject<ResolveValveAuthcodeParams>(raw, 'resolve_valve_authcode_urls');
+    sidecarLog('resolve_valve_authcode_urls', { count: params.items?.length ?? 0 });
+    if (!params.bot?.username) {
+      throw new RpcError(RpcErrorCode.InvalidParams, 'Valve bot username is required', { platform: 'valve' });
+    }
+    return registry.run('valve', async () => {
+      const { resolveValveAuthcodeUrls } = await import('./adapters/valve-downloader/steam-gc.js');
+      const { bot } = params;
+      const login = {
+        username: bot.username,
+        password: bot.password ?? undefined,
+        secret: bot.secret ?? undefined,
+        refreshToken: bot.refreshToken ?? undefined,
+      };
+      return resolveValveAuthcodeUrls(login, params.items ?? [], emit);
+    });
   });
 
-  server.register('resolve_5eplay_player_id', async (raw: unknown) => {
-    const params = raw as { input: string };
-    const uuid = await resolve5EPlayPlayerId(params.input);
-    return { uuid };
+  server.register('resolve_5eplay_player_id', async (raw) => {
+    const params = requireObject<Resolve5EPlayPlayerIdParams>(raw, 'resolve_5eplay_player_id');
+    return registry.run('5eplay', async () => {
+      const { resolve5EPlayPlayerId } = await import('./adapters/5eplay/resolve-player-id.js');
+      return { uuid: await resolve5EPlayPlayerId(params.input) };
+    });
   });
 
-  server.register('ping', async () => ({ pong: true }));
+  server.register('shutdown', async () => {
+    sidecarLog('shutdown requested');
+    setTimeout(() => (options.onShutdown ?? (() => process.exit(0)))(), 50);
+    return { ok: true };
+  });
 }

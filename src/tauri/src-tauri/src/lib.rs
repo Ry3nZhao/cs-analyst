@@ -35,14 +35,22 @@ pub fn run() {
             let db = Arc::new(Mutex::new(database));
             identity::init(db.clone());
             let script = resolve_sidecar_script();
-            let sidecar = Arc::new(SidecarManager::new(script));
+            let log_dir = std::path::PathBuf::from(db.lock().get_data_root()).join("logs");
+            let sidecar = Arc::new(SidecarManager::new(script, Some(log_dir)));
             let analysis = AnalysisQueue::new(db.clone());
             analysis.start(app.handle().clone());
             stats::spawn_backfill(db.clone());
             aim::start_backfill(db.clone());
             let orchestrator = Arc::new(DownloadOrchestrator::new(db.clone(), sidecar.clone(), analysis.clone()));
             orchestrator.wire_sidecar_events(app.handle().clone());
-            let _ = sidecar.start();
+            orchestrator.sync_adapter_switches();
+            sidecar.spawn_supervisor();
+            {
+                let sidecar = sidecar.clone();
+                std::thread::spawn(move || {
+                    let _ = sidecar.start();
+                });
+            }
 
             app.manage(AppState {
                 db: db.clone(),
@@ -134,6 +142,9 @@ pub fn run() {
             identity::commands::rebuild_head_to_head,
             aim::commands::get_aim_stats,
             aim::commands::get_sprays,
+            sidecar::commands::get_downloader_status,
+            sidecar::commands::restart_downloader,
+            sidecar::commands::get_downloader_logs,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

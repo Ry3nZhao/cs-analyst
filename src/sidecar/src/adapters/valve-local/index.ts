@@ -2,7 +2,7 @@ import type { EventEmitter } from '../../lib/emit-progress.js';
 import { downloadValveDemo } from '../valve-authcode/download.js';
 
 /** Valve local discovery requires an active Steam client session (CSDM boiler). */
-export async function discoverValveLocal(_steamId: string): Promise<import('@cs-analyst/shared-types').DiscoveredMatchDto[]> {
+export async function discoverValveLocal(_steamId: string): Promise<import('@cs-analyst/downloader-protocol').DiscoveredMatchDto[]> {
   throw new Error(
     'Valve local discovery requires Steam login integration; use Auth Code channel or add share codes manually.',
   );

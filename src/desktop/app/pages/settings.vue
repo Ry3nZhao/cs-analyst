@@ -104,6 +104,9 @@
       </div>
     </div>
 
+    <!-- Downloader module -->
+    <DownloaderStatusCard />
+
     <!-- Platform settings -->
     <div class="card card-pad">
       <div class="card-title">平台重试策略</div>

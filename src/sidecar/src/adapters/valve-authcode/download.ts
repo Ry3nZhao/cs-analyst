@@ -4,7 +4,7 @@ export async function downloadValveDemo(params: {
   outputPath: string;
   demoUrl?: string | null;
   jobId?: string;
-  emit?: (event: import('@cs-analyst/shared-types').SidecarEvent) => void;
+  emit?: (event: import('@cs-analyst/downloader-protocol').SidecarEvent) => void;
 }): Promise<{ checksum?: string }> {
   if (!params.demoUrl) throw new Error('No demo URL available');
   return downloadValveDemoFile({

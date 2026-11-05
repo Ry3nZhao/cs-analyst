@@ -6,117 +6,8 @@ export type MatchStatus = 'queued' | 'downloading' | 'completed' | 'failed' | 's
 /** @deprecated use MatchStatus */
 export type JobStatus = MatchStatus;
 
-export interface DiscoveredMatchDto {
-  matchId: string;
-  shareCode?: string | null;
-  demoUrl?: string | null;
-  mapName?: string | null;
-  playedAt?: string | null;
-  valveChannel?: ValveChannel | null;
-  rawPayload: Record<string, unknown>;
-}
-
-export interface DiscoverParams {
-  platform: Platform;
-  subAccountId: string;
-  externalId: string;
-  metadata: Record<string, unknown>;
-  valveChannel?: ValveChannel | null;
-}
-
-export interface DownloadParams {
-  jobId: string;
-  platform: Platform;
-  outputPath: string;
-  demoUrl: string;
-  matchId: string;
-  valveChannel?: ValveChannel | null;
-  metadata?: Record<string, unknown>;
-}
-
-export interface JsonRpcRequest {
-  id: string | number;
-  method: string;
-  params?: unknown;
-}
-
-export interface JsonRpcResponse {
-  id: string | number | null;
-  result?: unknown;
-  error?: { code: number; message: string; data?: unknown };
-}
-
-export interface SidecarEvent {
-  event: string;
-  [key: string]: unknown;
-}
-
-export type ResolveProgressPhase = 'started' | 'resolved' | 'failed';
-
-export interface ResolveProgressEvent extends SidecarEvent {
-  event: 'resolve.progress';
-  jobId: string;
-  matchId: string;
-  shareCode: string;
-  phase: ResolveProgressPhase;
-  demoUrl?: string;
-  playedAt?: string;
-  mapName?: string;
-  error?: string;
-}
-
-export type ResolveBatchPhase = 'logging_in' | 'resolving' | 'done';
-
-export interface ResolveBatchEvent extends SidecarEvent {
-  event: 'resolve.batch';
-  total: number;
-  completed: number;
-  phase: ResolveBatchPhase;
-}
-
-export type DownloadProgressPhase = 'downloading' | 'extracting' | 'done';
-
-export interface DownloadProgressEvent extends SidecarEvent {
-  event: 'download.progress';
-  jobId: string;
-  progress: number;
-  bytesDownloaded?: number;
-  totalBytes?: number;
-  phase: DownloadProgressPhase;
-}
-
-export interface ValveBotLoginDto {
-  username: string;
-  password?: string;
-  secret?: string;
-  refreshToken?: string;
-}
-
-export interface ResolveValveAuthcodeItemDto {
-  jobId: string;
-  shareCode: string;
-  matchId: string;
-}
-
-export interface ResolveValveAuthcodeParams {
-  bot: ValveBotLoginDto;
-  items: ResolveValveAuthcodeItemDto[];
-}
-
-export interface ResolvedValveMatchDto {
-  jobId: string;
-  shareCode: string;
-  matchId: string;
-  demoUrl?: string;
-  playedAt?: string;
-  mapName?: string;
-  error?: string;
-}
-
-export interface ResolveValveAuthcodeResultDto {
-  resolved: ResolvedValveMatchDto[];
-  refreshToken?: string;
-}
+// 下载模块协议类型（DiscoverParams、JsonRpc*、进度事件等）已移到 `@cs-analyst/downloader-protocol`
+// （src/sidecar/protocol），前端不依赖它们；设置页用到的模块状态见 ./downloader.ts。
 
 export interface UserDto {
   id: string;
@@ -272,3 +163,4 @@ export interface ValveBotConfigUpdateDto {
 export * from './stats.js';
 export * from './identity.js';
 export * from './aim.js';
+export * from './downloader.js';

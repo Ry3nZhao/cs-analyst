@@ -23,7 +23,7 @@
 
 - **前端**（`src/desktop`）：账号、比赛列表、设置等界面
 - **Rust**（`src/tauri/src-tauri`）：SQLite 持久化、下载调度、demo 解析、文件落盘
-- **下载模块**（`src/sidecar`）：各平台 demo 发现与下载。主程序通过 JSON-RPC 调用它，并负责它的启动和重启。计划将来拆成独立仓库，以 git submodule 引入（见路线图 3.2）
+- **下载模块**（`src/sidecar`）：各平台 demo 发现与下载，不碰 demo 解析。主程序通过 JSON-RPC 调用它，负责握手（协议版本检查）、心跳、崩溃后退避重启、调用超时和日志收集。协议、管理策略和拆分步骤见 [downloader-protocol.md](downloader-protocol.md)。计划将来拆成独立仓库，以 git submodule 引入（见路线图 3.2）
 
 ## 仓库结构
 
@@ -32,7 +32,8 @@ cs-analyst/
 ├── src/
 │   ├── desktop/              # Nuxt 4 SPA (@nuxt/ui)
 │   ├── sidecar/              # 下载模块（Node，JSON-RPC）
-│   ├── shared-types/         # 前端 / sidecar 共享类型
+│   │   └── protocol/         # 协议类型包 @cs-analyst/downloader-protocol（模块唯一的对外边界）
+│   ├── shared-types/         # 前端 / Rust 共享类型
 │   └── tauri/src-tauri/      # Rust：Tauri 壳 + Cargo workspace 根
 │       ├── src/              # 主 crate：orchestrator / analysis / database / commands
 │       ├── crates/
@@ -48,6 +49,7 @@ cs-analyst/
 
 ```
 下载完成 / 手动导入 / 元数据刷新 / 启动时补齐
+        │  demo_parse::read_demo_file_meta（只读文件头 + sha256，约 0.1–0.4 s）
         │  apply_dem_metadata（文件头有效）→ AnalysisQueue::enqueue
         ▼
 AnalysisQueue（单 worker 线程，去重 FIFO）
@@ -91,3 +93,5 @@ SQLite 单文件数据库，迁移文件在 `migrations/sqlite/`，通过 `PRAGM
 | Valve Local | `adapters/valve-local` | 占位，建议先用 Auth Code |
 
 Valve 的两个下载通道之间按 `share_code` 去重，避免同一局被重复下载。
+
+每个 adapter 可以单独启用 / 停用（`platform_settings.enabled`，设置页「下载模块」区块），由主程序通过 `configure` 下发。adapter 按需加载，单个 adapter 加载失败或抛错不影响其他平台。
