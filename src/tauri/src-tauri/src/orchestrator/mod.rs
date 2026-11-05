@@ -101,6 +101,39 @@ fn resolve_reclassify_match_id(
         .or(stored.filter(|s| !s.is_empty()))
 }
 
+/// 文件头 → `matches` 表的元数据列。空字符串视为缺失（与原来处理 sidecar JSON 的口径一致）。
+fn metadata_from_header(m: demo_parse::DemoFileMeta) -> ParsedDemMetadata {
+    fn ne(v: Option<String>) -> Option<String> {
+        v.filter(|s| !s.is_empty())
+    }
+    ParsedDemMetadata {
+        match_id: ne(m.match_id),
+        map_name: ne(m.map_name),
+        duration_seconds: m.duration_seconds,
+        game_mode: ne(m.game_mode),
+        game_type: m.game_type,
+        played_at: ne(m.played_at),
+        checksum: ne(Some(m.sha256)),
+        is_valid: m.is_valid,
+        demo_file_stamp: ne(m.demo_file_stamp),
+        network_protocol: m.network_protocol,
+        server_name: ne(m.server_name),
+        client_name: ne(m.client_name),
+        game_directory: ne(m.game_directory),
+        fullpackets_version: m.fullpackets_version,
+        allow_clientside_entities: m.allow_clientside_entities,
+        demo_header_field_9: m.demo_header_field_9,
+        demo_header_field_10: ne(m.demo_header_field_10),
+        demo_version_name: ne(m.demo_version_name),
+        demo_version_guid: ne(m.demo_version_guid),
+        playback_time: m.playback_time,
+        playback_ticks: m.playback_ticks,
+        playback_frames: m.playback_frames,
+        dem_game_info: m.dem_game_info,
+        detected_platform: ne(Some(m.detected_platform)),
+    }
+}
+
 enum MetadataReclassifyOutcome {
     None,
     Reclassified { id: String },
@@ -144,9 +177,27 @@ impl DownloadOrchestrator {
 
     pub fn wire_sidecar_events(self: &Arc<Self>, app: AppHandle) {
         let orchestrator = Arc::clone(self);
+        let status_app = app.clone();
         self.sidecar.set_event_handler(Arc::new(move |event| {
             orchestrator.handle_sidecar_event(&app, event);
         }));
+        self.sidecar.set_status_handler(Arc::new(move |status| {
+            let _ = status_app.emit("downloader_status", status);
+        }));
+    }
+
+    /// 把 `platform_settings.enabled` 下发给下载模块（启动时、修改平台设置后、重启后调用）。
+    pub fn sync_adapter_switches(&self) {
+        let switches: Vec<(String, bool)> = match repo::list_platform_settings(&self.db.lock()) {
+            Ok(list) => list.into_iter().map(|p| (p.platform, p.enabled)).collect(),
+            Err(err) => {
+                orch_log(format!("读取平台设置失败: {err}"));
+                return;
+            }
+        };
+        if let Err(err) = self.sidecar.set_adapter_switches(&switches) {
+            orch_log(format!("下发 adapter 开关失败: {err}"));
+        }
     }
 
     fn handle_sidecar_event(&self, app: &AppHandle, event: Value) {
@@ -484,61 +535,11 @@ impl DownloadOrchestrator {
         true
     }
 
+    /// 读 demo 文件头（Rust，`demo_parse::read_demo_file_meta`；原来由下载模块的 `dem-parser.ts` 完成）。
     fn parse_dem_metadata(&self, abs_path: &Path) -> Result<ParsedDemMetadata, OrchestratorError> {
-        let header: serde_json::Value = self
-            .sidecar
-            .call(
-                "analyze_dem",
-                json!({ "filePath": abs_path.to_string_lossy() }),
-            )
-            .map_err(|e| OrchestratorError::Message(e.to_string()))?;
-
-        fn opt_str(v: &serde_json::Value, key: &str) -> Option<String> {
-            v.get(key)
-                .and_then(|x| x.as_str())
-                .filter(|s| !s.is_empty())
-                .map(String::from)
-        }
-        fn opt_i64(v: &serde_json::Value, key: &str) -> Option<i64> {
-            v.get(key).and_then(|x| x.as_i64())
-        }
-        fn opt_f64(v: &serde_json::Value, key: &str) -> Option<f64> {
-            v.get(key).and_then(|x| x.as_f64())
-        }
-        fn opt_bool(v: &serde_json::Value, key: &str) -> Option<bool> {
-            v.get(key).and_then(|x| x.as_bool())
-        }
-
-        let checksum = opt_str(&header, "sha256");
-        let is_valid = header.get("isValid").and_then(|v| v.as_bool()).unwrap_or(false);
-        let dem_game_info = header.get("demGameInfo").cloned().filter(|v| !v.is_null());
-
-        Ok(ParsedDemMetadata {
-            match_id: opt_str(&header, "matchId"),
-            map_name: opt_str(&header, "mapName"),
-            duration_seconds: opt_i64(&header, "durationSeconds"),
-            game_mode: opt_str(&header, "gameMode"),
-            game_type: opt_i64(&header, "gameType"),
-            played_at: opt_str(&header, "playedAt"),
-            checksum,
-            is_valid,
-            demo_file_stamp: opt_str(&header, "demoFileStamp"),
-            network_protocol: opt_i64(&header, "networkProtocol"),
-            server_name: opt_str(&header, "serverName"),
-            client_name: opt_str(&header, "clientName"),
-            game_directory: opt_str(&header, "gameDirectory"),
-            fullpackets_version: opt_i64(&header, "fullpacketsVersion"),
-            allow_clientside_entities: opt_bool(&header, "allowClientsideEntities"),
-            demo_header_field_9: opt_i64(&header, "demoHeaderField9"),
-            demo_header_field_10: opt_str(&header, "demoHeaderField10"),
-            demo_version_name: opt_str(&header, "demoVersionName"),
-            demo_version_guid: opt_str(&header, "demoVersionGuid"),
-            playback_time: opt_f64(&header, "playbackTime"),
-            playback_ticks: opt_i64(&header, "playbackTicks"),
-            playback_frames: opt_i64(&header, "playbackFrames"),
-            dem_game_info,
-            detected_platform: opt_str(&header, "detectedPlatform"),
-        })
+        let meta = demo_parse::read_demo_file_meta(abs_path)
+            .map_err(|e| OrchestratorError::Message(format!("读取 demo 文件头失败: {e}")))?;
+        Ok(metadata_from_header(meta))
     }
 
     fn apply_dem_metadata(

@@ -247,7 +247,9 @@ pub fn update_platform_settings(
     platform: PlatformSettings,
 ) -> Result<(), String> {
     validate_platform(platform.platform.as_str())?;
-    repo::update_platform_settings(&state.db.lock(), &platform).map_err(|e| e.to_string())
+    repo::update_platform_settings(&state.db.lock(), &platform).map_err(|e| e.to_string())?;
+    state.orchestrator.sync_adapter_switches();
+    Ok(())
 }
 
 #[tauri::command]

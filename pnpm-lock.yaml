@@ -15,7 +15,7 @@ importers:
         version: link:../shared-types
       '@nuxt/ui':
         specifier: ^4.8.2
-        version: 4.8.2(@internationalized/date@3.12.2)(@internationalized/number@3.6.7)(@tiptap/extensions@3.26.1(@tiptap/core@3.26.1(@tiptap/pm@3.26.1))(@tiptap/pm@3.26.1))(@tiptap/y-tiptap@3.0.5(prosemirror-model@1.25.8)(prosemirror-state@1.4.4)(prosemirror-view@1.41.9)(y-protocols@1.0.7(yjs@13.6.31))(yjs@13.6.31))(axios@1.17.0)(db0@0.3.4)(embla-carousel@8.6.0)(ioredis@5.11.1)(magicast@0.5.3)(tailwindcss@4.3.1)(typescript@5.9.3)(vite@7.3.5(@types/node@24.13.2)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.48.0)(yaml@2.9.0))(vue-router@5.1.0(@vue/compiler-sfc@3.5.38)(vite@7.3.5(@types/node@24.13.2)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.48.0)(yaml@2.9.0))(vue@3.5.38(typescript@5.9.3)))(vue@3.5.38(typescript@5.9.3))(yjs@13.6.31)
+        version: 4.8.2(@internationalized/date@3.12.2)(@internationalized/number@3.6.7)(@tiptap/extensions@3.26.1(@tiptap/core@3.26.1(@tiptap/pm@3.26.1))(@tiptap/pm@3.26.1))(@tiptap/y-tiptap@3.0.5(prosemirror-model@1.25.8)(prosemirror-state@1.4.4)(prosemirror-view@1.41.9)(y-protocols@1.0.7(yjs@13.6.31))(yjs@13.6.31))(axios@1.17.0)(db0@0.3.4)(embla-carousel@8.6.0)(ioredis@5.11.1)(magicast@0.5.3)(tailwindcss@4.3.1)(typescript@5.9.3)(vite@7.3.5(@types/node@24.13.2)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.48.0)(yaml@2.9.0))(vue@3.5.38(typescript@5.9.3))(yjs@13.6.31)
       '@tauri-apps/api':
         specifier: ^2.5.0
         version: 2.11.0
@@ -47,15 +47,12 @@ importers:
 
   src/sidecar:
     dependencies:
-      '@cs-analyst/shared-types':
+      '@cs-analyst/downloader-protocol':
         specifier: workspace:*
-        version: link:../shared-types
+        version: link:protocol
       axios:
         specifier: ^1.9.0
         version: 1.17.0
-      csgo-protobuf:
-        specifier: ^4.1.6
-        version: 4.1.9
       csgo-sharecode:
         specifier: ^3.0.0
         version: 3.1.2
@@ -68,9 +65,6 @@ importers:
       p-timeout:
         specifier: ^6.1.4
         version: 6.1.4
-      snappyjs:
-        specifier: ^0.7.0
-        version: 0.7.0
       steam-totp:
         specifier: ^2.1.2
         version: 2.1.2
@@ -90,15 +84,18 @@ importers:
       '@types/node':
         specifier: ^24.0.0
         version: 24.13.2
-      '@types/snappyjs':
-        specifier: ^0.7.1
-        version: 0.7.1
       '@types/steam-totp':
         specifier: ^2.1.2
         version: 2.1.2
       '@types/unzipper':
         specifier: ^0.10.11
         version: 0.10.11
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+
+  src/sidecar/protocol:
+    devDependencies:
       typescript:
         specifier: ^5.8.3
         version: 5.9.3
@@ -276,9 +273,6 @@ packages:
         optional: true
       commander:
         optional: true
-
-  '@bufbuild/protobuf@2.11.0':
-    resolution: {integrity: sha512-sBXGT13cpmPR5BMgHE6UEEfEaShh5Ror6rfN3yEK5si7QVrtZg8LEPQb0VVhiLRUslD2yLnXtnRzG035J/mZXQ==}
 
   '@capsizecss/unpack@4.0.1':
     resolution: {integrity: sha512-CuNiSqg7+e1cO/GjffyMOm5Tt2jUF9CWHHnvQ/UkqvtkGfHdgwEC0wpmq7fkN3gxwpRnrAN0WzO3vREKmNolMQ==}
@@ -2026,9 +2020,6 @@ packages:
   '@types/resolve@1.20.2':
     resolution: {integrity: sha512-60BCwRFOZCQhDncwQdxxeOEEkbc5dIMccYLwbxsS4TUNeVECQ/pBJ0j09mrHOl/JJvpRPGwO9SvE4nR2Nb/a4Q==}
 
-  '@types/snappyjs@0.7.1':
-    resolution: {integrity: sha512-OxjzJ6cQZstysMh6PEwZWmK9qlKZyezHJKOkcUkZDooSFuog2votUEKkxMaTq51UQF3cJkXKQ+XGlj4FSl8JQQ==}
-
   '@types/steam-totp@2.1.2':
     resolution: {integrity: sha512-XNg9/PkSgbAVy58O3vgSermXU7YNJCX7Cmqx4aNE8CE6sI3m0vm7HBXgSj9eLJjEUfMP1vg64LKP65bj0Jpc5g==}
 
@@ -2547,9 +2538,6 @@ packages:
     peerDependenciesMeta:
       srvx:
         optional: true
-
-  csgo-protobuf@4.1.9:
-    resolution: {integrity: sha512-5OjV+LGK5nB0TT5MOUCyzsS1L4yuHJB66BMM3yC3D2OmQMXIg/9qptPz+vo6EDrymKc9xspT+aPqHmFYipwTtA==}
 
   csgo-sharecode@3.1.2:
     resolution: {integrity: sha512-uaSkf6jmAR4Iqn5Tavo7HWJ+epyaGUk1iiTkjh7v/E2CcrHrCglH4RUPF6qCN95Wv2G/aVZNqPUZJ5NOW3LSYw==}
@@ -4133,9 +4121,6 @@ packages:
     resolution: {integrity: sha512-RQsvleCbF8cVHEv+xuDGaA4pOizFqJ0GgjtMSRo6oP8pnN7WsigHgVGey6aILRBKv4W2YOMHLqbKdnB6hpB9fw==}
     engines: {node: '>=20.0.0'}
 
-  snappyjs@0.7.0:
-    resolution: {integrity: sha512-u5iEEXkMe2EInQio6Wv9LWHOQYRDbD2O9hzS27GpT/lwfIQhTCnHCTqedqHIHe9ZcvQo+9au6vngQayipz1NYw==}
-
   socks-proxy-agent@7.0.0:
     resolution: {integrity: sha512-Fgl0YPZ902wEsAyiQ+idGd1A7rSFx/ayC1CQVMw5P+EQx2V0SgpGtf6OKFhVjPflPUl9YMmEOnmfjCdMUsygww==}
     engines: {node: '>= 10'}
@@ -5008,8 +4993,6 @@ snapshots:
       cac: 6.7.14
       citty: 0.2.2
 
-  '@bufbuild/protobuf@2.11.0': {}
-
   '@capsizecss/unpack@4.0.1':
     dependencies:
       fontkitten: 1.0.3
@@ -5649,7 +5632,7 @@ snapshots:
       rc9: 3.0.1
       std-env: 4.1.0
 
-  '@nuxt/ui@4.8.2(@internationalized/date@3.12.2)(@internationalized/number@3.6.7)(@tiptap/extensions@3.26.1(@tiptap/core@3.26.1(@tiptap/pm@3.26.1))(@tiptap/pm@3.26.1))(@tiptap/y-tiptap@3.0.5(prosemirror-model@1.25.8)(prosemirror-state@1.4.4)(prosemirror-view@1.41.9)(y-protocols@1.0.7(yjs@13.6.31))(yjs@13.6.31))(axios@1.17.0)(db0@0.3.4)(embla-carousel@8.6.0)(ioredis@5.11.1)(magicast@0.5.3)(tailwindcss@4.3.1)(typescript@5.9.3)(vite@7.3.5(@types/node@24.13.2)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.48.0)(yaml@2.9.0))(vue-router@5.1.0(@vue/compiler-sfc@3.5.38)(vite@7.3.5(@types/node@24.13.2)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.48.0)(yaml@2.9.0))(vue@3.5.38(typescript@5.9.3)))(vue@3.5.38(typescript@5.9.3))(yjs@13.6.31)':
+  '@nuxt/ui@4.8.2(@internationalized/date@3.12.2)(@internationalized/number@3.6.7)(@tiptap/extensions@3.26.1(@tiptap/core@3.26.1(@tiptap/pm@3.26.1))(@tiptap/pm@3.26.1))(@tiptap/y-tiptap@3.0.5(prosemirror-model@1.25.8)(prosemirror-state@1.4.4)(prosemirror-view@1.41.9)(y-protocols@1.0.7(yjs@13.6.31))(yjs@13.6.31))(axios@1.17.0)(db0@0.3.4)(embla-carousel@8.6.0)(ioredis@5.11.1)(magicast@0.5.3)(tailwindcss@4.3.1)(typescript@5.9.3)(vite@7.3.5(@types/node@24.13.2)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.48.0)(yaml@2.9.0))(vue@3.5.38(typescript@5.9.3))(yjs@13.6.31)':
     dependencies:
       '@floating-ui/dom': 1.7.6
       '@iconify/vue': 5.0.1(vue@3.5.38(typescript@5.9.3))
@@ -5718,7 +5701,6 @@ snapshots:
     optionalDependencies:
       '@internationalized/date': 3.12.2
       '@internationalized/number': 3.6.7
-      vue-router: 5.1.0(@vue/compiler-sfc@3.5.38)(vite@7.3.5(@types/node@24.13.2)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.48.0)(yaml@2.9.0))(vue@3.5.38(typescript@5.9.3))
     transitivePeerDependencies:
       - '@azure/app-configuration'
       - '@azure/cosmos'
@@ -6690,8 +6672,6 @@ snapshots:
 
   '@types/resolve@1.20.2': {}
 
-  '@types/snappyjs@0.7.1': {}
-
   '@types/steam-totp@2.1.2':
     dependencies:
       '@types/node': 24.13.2
@@ -7230,10 +7210,6 @@ snapshots:
   crossws@0.4.6(srvx@0.11.16):
     optionalDependencies:
       srvx: 0.11.16
-
-  csgo-protobuf@4.1.9:
-    dependencies:
-      '@bufbuild/protobuf': 2.11.0
 
   csgo-sharecode@3.1.2: {}
 
@@ -9122,8 +9098,6 @@ snapshots:
   smart-buffer@4.2.0: {}
 
   smob@1.6.2: {}
-
-  snappyjs@0.7.0: {}
 
   socks-proxy-agent@7.0.0:
     dependencies:

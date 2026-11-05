@@ -1,4 +1,4 @@
-import type { DownloadProgressEvent, ResolveBatchEvent, ResolveProgressEvent, SidecarEvent } from '@cs-analyst/shared-types';
+import type { DownloadProgressEvent, ResolveBatchEvent, ResolveProgressEvent, SidecarEvent } from '@cs-analyst/downloader-protocol';
 
 export type EventEmitter = (event: SidecarEvent) => void;
 

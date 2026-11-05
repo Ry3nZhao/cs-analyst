@@ -1,7 +1,7 @@
 import axios from 'axios';
 import PQueue from 'p-queue';
 import { decodeMatchShareCode } from 'csgo-sharecode';
-import type { DiscoveredMatchDto, ValveChannel } from '@cs-analyst/shared-types';
+import type { DiscoveredMatchDto, ValveChannel } from '@cs-analyst/downloader-protocol';
 
 interface MatchHistoryResponse {
   result?: { nextcode?: string };

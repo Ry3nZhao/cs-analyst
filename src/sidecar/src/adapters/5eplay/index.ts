@@ -2,7 +2,7 @@ import { createWriteStream } from 'node:fs';
 import { pipeline } from 'node:stream/promises';
 import { createGunzip } from 'node:zlib';
 import bz2 from 'unbzip2-stream';
-import type { DiscoveredMatchDto } from '@cs-analyst/shared-types';
+import type { DiscoveredMatchDto } from '@cs-analyst/downloader-protocol';
 import { emitDownloadProgress, type EventEmitter } from '../../lib/emit-progress.js';
 import { httpDownloadDemo } from '../../lib/http-download.js';
 import { resolve5EPlayPlayerId } from './resolve-player-id.js';
@@ -138,3 +138,8 @@ export async function download5EPlay(
     emitDownloadProgress(emit, { jobId, progress: 1, phase: 'done' });
   }
 }
+
+export const fiveEPlayAdapter: import('../registry.js').AdapterModule = {
+  discover: (params) => discover5EPlay(params.externalId),
+  download: (params, { emit }) => download5EPlay(params.demoUrl, params.outputPath, { jobId: params.jobId, emit }),
+};

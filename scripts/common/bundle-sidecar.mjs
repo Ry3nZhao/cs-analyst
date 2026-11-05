@@ -6,10 +6,9 @@ import { root } from '../lib/paths.mjs';
 import { runPnpm } from '../lib/run.mjs';
 
 const sidecarDist = path.join(root, 'src', 'sidecar', 'dist');
-const sharedDist = path.join(root, 'src', 'shared-types', 'dist');
+const protocolDist = path.join(root, 'src', 'sidecar', 'protocol', 'dist');
 const targetDir = path.join(root, 'src', 'tauri', 'src-tauri', 'resources', 'sidecar');
 
-runPnpm(['--filter', '@cs-analyst/shared-types', 'build']);
 runPnpm(['--filter', '@cs-analyst/sidecar', 'build']);
 
 fs.mkdirSync(targetDir, { recursive: true });
@@ -28,15 +27,16 @@ if (bundledJs.length === 0) {
   throw new Error(`no sidecar .js files copied from ${sidecarDist}`);
 }
 
-const sharedTarget = path.join(targetDir, 'node_modules', '@cs-analyst', 'shared-types');
-fs.mkdirSync(path.dirname(sharedTarget), { recursive: true });
-fs.cpSync(sharedDist, path.join(sharedTarget, 'dist'), { recursive: true });
+// 下载模块只依赖协议包（src/sidecar/protocol），不依赖主仓库的其他代码
+const protocolTarget = path.join(targetDir, 'node_modules', '@cs-analyst', 'downloader-protocol');
+fs.mkdirSync(path.dirname(protocolTarget), { recursive: true });
+fs.cpSync(protocolDist, path.join(protocolTarget, 'dist'), { recursive: true });
 fs.writeFileSync(
-  path.join(sharedTarget, 'package.json'),
+  path.join(protocolTarget, 'package.json'),
   JSON.stringify(
     {
-      name: '@cs-analyst/shared-types',
-      version: '0.1.0',
+      name: '@cs-analyst/downloader-protocol',
+      version: '1.0.0',
       type: 'module',
       exports: { '.': { import: './dist/index.js' } },
     },

@@ -4,7 +4,7 @@ import stream from 'node:stream';
 import util from 'node:util';
 import axios from 'axios';
 import bz2 from 'unbzip2-stream';
-import type { DownloadProgressEvent } from '@cs-analyst/shared-types';
+import type { DownloadProgressEvent } from '@cs-analyst/downloader-protocol';
 import { emitDownloadProgress, type EventEmitter } from './emit-progress.js';
 
 const pipeline = util.promisify(stream.pipeline);

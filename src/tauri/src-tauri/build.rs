@@ -44,6 +44,9 @@ const COMMANDS: &[&str] = &[
     "rebuild_head_to_head",
     "get_aim_stats",
     "get_sprays",
+    "get_downloader_status",
+    "restart_downloader",
+    "get_downloader_logs",
 ];
 
 fn main() {

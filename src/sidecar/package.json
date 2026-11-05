@@ -1,6 +1,6 @@
 {
   "name": "@cs-analyst/sidecar",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "main": "./dist/index.js",
@@ -8,20 +8,19 @@
     "cs-analyst-sidecar": "./dist/index.js"
   },
   "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch",
+    "build": "pnpm run clean && tsc -p protocol && tsc",
+    "dev": "tsc -p protocol && tsc --watch",
     "start": "node dist/index.js",
-    "test": "tsc && node --test dist/**/*.test.js"
+    "test": "pnpm run build && node --test dist/**/*.test.js",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\""
   },
   "dependencies": {
-    "@cs-analyst/shared-types": "workspace:*",
+    "@cs-analyst/downloader-protocol": "workspace:*",
     "axios": "^1.9.0",
     "csgo-sharecode": "^3.0.0",
-    "csgo-protobuf": "^4.1.6",
     "globaloffensive": "^3.2.0",
     "p-queue": "^8.1.0",
     "p-timeout": "^6.1.4",
-    "snappyjs": "^0.7.0",
     "steam-totp": "^2.1.2",
     "steam-user": "^5.2.0",
     "unbzip2-stream": "^1.4.3",
@@ -30,9 +29,9 @@
   "devDependencies": {
     "@types/globaloffensive": "^2.3.4",
     "@types/node": "^24.0.0",
-    "@types/snappyjs": "^0.7.1",
     "@types/steam-totp": "^2.1.2",
     "@types/unzipper": "^0.10.11",
     "typescript": "^5.8.3"
-  }
+  },
+  "description": "CS Analyst 下载模块（JSON-RPC over stdio）。协议见 docs/downloader-protocol.md"
 }

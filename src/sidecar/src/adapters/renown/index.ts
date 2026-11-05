@@ -1,4 +1,4 @@
-import type { DiscoveredMatchDto } from '@cs-analyst/shared-types';
+import type { DiscoveredMatchDto } from '@cs-analyst/downloader-protocol';
 import { httpDownloadDemo } from '../../lib/http-download.js';
 import type { EventEmitter } from '../../lib/emit-progress.js';
 
@@ -63,3 +63,8 @@ export async function downloadRenown(
     throw error;
   }
 }
+
+export const renownAdapter: import('../registry.js').AdapterModule = {
+  discover: (params) => discoverRenown(params.externalId),
+  download: (params, { emit }) => downloadRenown(params.demoUrl, params.outputPath, { jobId: params.jobId, emit }),
+};

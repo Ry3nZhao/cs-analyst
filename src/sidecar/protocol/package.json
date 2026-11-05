@@ -1,0 +1,21 @@
+{
+  "name": "@cs-analyst/downloader-protocol",
+  "version": "1.0.0",
+  "private": true,
+  "description": "下载模块 JSON-RPC 协议类型（主程序 ⇄ 下载模块的唯一边界）",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}
