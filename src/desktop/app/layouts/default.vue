@@ -114,7 +114,15 @@ const titles: Record<string, string> = {
   '/accounts': '账户管理',
   '/settings': '系统设置',
 };
-const title = computed(() => titles[route.path] ?? 'CS Analyst');
+// 动态路由（/matches/[id]、/players/[steamid]、/replay/[id]）按前缀取标题
+const prefixTitles: [string, string][] = [
+  ['/matches/', '比赛详情'],
+  ['/players/', '选手详情'],
+  ['/replay/', '2D 回放'],
+];
+const title = computed(
+  () => titles[route.path] ?? prefixTitles.find(([p]) => route.path.startsWith(p))?.[1] ?? 'CS Analyst',
+);
 
 // Nav icon components
 function navIcon(d: string) {
