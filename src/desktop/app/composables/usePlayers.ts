@@ -31,20 +31,33 @@ export async function resolvePersonParam(param: string): Promise<PersonDetailDto
   return hit ? tauriInvoke<PersonDetailDto>('get_person', { id: hit.id }) : null;
 }
 
-/** 「我」：目前没有主玩家设置，取「我关注的人」里的第一个 */
+/**
+ * 「我」：主玩家（W3-C）所属的人。没设置主玩家，或主玩家的 steamid 不在本地库里时为 null。
+ * 主玩家变化时自动重新查询；合并 / 拆分后调用 refreshMe() 重新按 steamid 解析。
+ */
 export function useMe() {
   const me = useState<PersonSummaryDto | null>('players-me', () => null);
   const loaded = useState('players-me-loaded', () => false);
+  const main = useMainPlayer();
+  let seq = 0;
   async function refreshMe() {
-    try {
-      const list = await searchPersons(undefined, { followedOnly: true, limit: 1 });
-      me.value = list[0] ?? null;
-    } catch {
-      me.value = null;
+    const my = ++seq;
+    await main.ready;
+    const sid = main.steamid.value;
+    let next: PersonSummaryDto | null = null;
+    if (sid) {
+      try {
+        next = (await resolvePersonParam(sid))?.person ?? null;
+      } catch {
+        next = null;
+      }
     }
+    if (my !== seq) return;
+    me.value = next;
     loaded.value = true;
   }
-  return { me, loaded, refreshMe };
+  main.onChange(() => void refreshMe());
+  return { me, loaded, refreshMe, mainSteamid: main.steamid, isMainSet: main.isSet };
 }
 
 /**

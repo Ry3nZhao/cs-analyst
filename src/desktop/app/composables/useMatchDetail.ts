@@ -2,25 +2,38 @@
 import type { BuyType, MatchDetailDto, PersonSummaryDto, PlayerMatchStatsDto, Side, SteamId, TeamId } from '@cs-analyst/shared-types';
 import { tauriInvoke } from '~/composables/useTauri';
 
-/** 还没有「主玩家」设置时的兜底 steamid（用户本人）。 */
-const FALLBACK_ME: SteamId = '76561198000000042';
-
-const mySteamIds = ref<Set<SteamId>>(new Set([FALLBACK_ME]));
-let meLoaded = false;
-
 /**
- * 「我」= 「我关注的人」里的第一个（W1-C）。第三波做主玩家设置后改这里即可。
- * 查询失败或没有关注的人时用兜底 steamid。
+ * 「我」的 steamid 集合：主玩家（W3-C）所属的人名下的全部 steamid（小号、换号合并后都算「我」）。
+ * 没设置主玩家时为空集合，页面上不标「我」。主玩家变化时自动重新计算。
  */
+const mySteamIds = ref<Set<SteamId>>(new Set());
+let meWatching = false;
+let currentMain: string | null = null;
+
+async function resolveMySteamIds(steamid: string | null) {
+  currentMain = steamid;
+  if (!steamid) {
+    mySteamIds.value = new Set();
+    return;
+  }
+  // 先只放主玩家本身，再补上同一个人名下的其他 steamid
+  mySteamIds.value = new Set([steamid]);
+  try {
+    const hits = await tauriInvoke<PersonSummaryDto[]>('search_persons', { query: steamid, followedOnly: false, limit: 20 });
+    const hit = hits.find(p => p.steamids.includes(steamid));
+    if (hit && currentMain === steamid) mySteamIds.value = new Set(hit.steamids);
+  } catch { /* 保留主玩家本身 */ }
+}
+
 export function useMySteamIds() {
-  if (!meLoaded) {
-    meLoaded = true;
-    tauriInvoke<PersonSummaryDto[]>('search_persons', { followedOnly: true, limit: 1 })
-      .then((list) => {
-        const ids = list[0]?.steamids ?? [];
-        if (ids.length > 0) mySteamIds.value = new Set([...ids, FALLBACK_ME]);
-      })
-      .catch(() => { /* 保留兜底 */ });
+  if (!meWatching) {
+    meWatching = true;
+    // 全局状态：放在独立的 effect scope 里，不随调用它的组件卸载而停止
+    effectScope(true).run(() => {
+      const main = useMainPlayer();
+      void main.ready.then(() => resolveMySteamIds(main.steamid.value));
+      watch(main.steamid, (id) => void resolveMySteamIds(id));
+    });
   }
   return mySteamIds;
 }

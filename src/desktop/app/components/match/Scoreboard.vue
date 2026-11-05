@@ -39,7 +39,7 @@
                 :title="c.title ?? c.label"
                 @click="toggleSort(c.key)"
               >
-                {{ c.label }}<span class="sort-mark">{{ sortKey === c.key ? (sortDesc ? '↓' : '↑') : '' }}</span>
+                {{ c.label }}<MetricHelp v-if="c.metric" :metric="c.metric" side="bottom" class="col-help" /><span class="sort-mark">{{ sortKey === c.key ? (sortDesc ? '↓' : '↑') : '' }}</span>
               </th>
             </tr>
           </thead>
@@ -95,6 +95,8 @@ interface Col {
   hint?: (p: PlayerMatchStatsDto) => string;
   /** 正负着色（例如 +/-）。 */
   signed?: boolean;
+  /** utils/metricGlossary.ts 的 key：表头显示「?」说明（点「?」不会触发排序）。 */
+  metric?: string;
 }
 
 const tab = ref<TabKey>('basic');
@@ -132,28 +134,28 @@ const BASIC: Col[] = [
   { key: 'd', label: 'D', title: '死亡', value: p => p.deaths },
   { key: 'a', label: 'A', title: '助攻', value: p => p.assists },
   { key: 'diff', label: '+/-', title: '击杀 − 死亡', value: p => p.kills - p.deaths, signed: true, text: p => { const v = p.kills - p.deaths; return v > 0 ? `+${v}` : String(v); } },
-  { key: 'adr', label: 'ADR', title: '场均每回合伤害', value: p => p.derived.adr, digits: 1 },
-  { key: 'kast', label: 'KAST', title: '有击杀 / 助攻 / 存活 / 被补枪的回合比例', value: p => p.derived.kast, digits: 0, text: p => `${p.derived.kast.toFixed(0)}%` },
-  { key: 'hs', label: 'HS%', title: '爆头击杀比例', value: p => p.derived.hsPct, text: p => `${p.derived.hsPct.toFixed(0)}%` },
-  { key: 'rating', label: 'Rating', title: 'HLTV Rating 2.0（公开近似公式，仅供参考）', value: p => p.derived.rating, digits: 2 },
+  { key: 'adr', metric: 'adr', label: 'ADR', title: '场均每回合伤害', value: p => p.derived.adr, digits: 1 },
+  { key: 'kast', metric: 'kast', label: 'KAST', title: '有击杀 / 助攻 / 存活 / 被补枪的回合比例', value: p => p.derived.kast, digits: 0, text: p => `${p.derived.kast.toFixed(0)}%` },
+  { key: 'hs', metric: 'hsPct', label: 'HS%', title: '爆头击杀比例', value: p => p.derived.hsPct, text: p => `${p.derived.hsPct.toFixed(0)}%` },
+  { key: 'rating', metric: 'rating', label: 'Rating', title: 'HLTV Rating 2.0（公开近似公式，仅供参考）', value: p => p.derived.rating, digits: 2 },
   { key: 'k2', label: '2K', value: p => p.multiKills[2] ?? 0 },
   { key: 'k3', label: '3K', value: p => p.multiKills[3] ?? 0 },
   { key: 'k4', label: '4K', value: p => p.multiKills[4] ?? 0 },
   { key: 'k5', label: '5K', value: p => p.multiKills[5] ?? 0 },
-  { key: 'mvp', label: 'MVP', title: '按引擎规则近似', value: p => p.mvps },
+  { key: 'mvp', metric: 'mvp', label: 'MVP', title: '按引擎规则近似', value: p => p.mvps },
 ];
 
 const DUELS: Col[] = [
   { key: 'openK', label: '首杀', title: '开局对枪获胜（T + CT）', value: p => p.openingKillsT + p.openingKillsCt },
   { key: 'openD', label: '首死', title: '开局对枪阵亡（T + CT）', value: p => p.openingDeathsT + p.openingDeathsCt },
-  { key: 'openPct', label: '首杀率', title: '开局对枪成功率', value: p => (p.derived.openingAttempts > 0 ? p.derived.openingSuccessPct : null), text: p => `${p.derived.openingSuccessPct.toFixed(0)}%` },
+  { key: 'openPct', metric: 'openingDuel', label: '首杀率', title: '开局对枪成功率', value: p => (p.derived.openingAttempts > 0 ? p.derived.openingSuccessPct : null), text: p => `${p.derived.openingSuccessPct.toFixed(0)}%` },
   { key: 'openT', label: 'T 首杀', title: 'T 方开局 击杀/尝试', value: p => p.openingKillsT, text: p => frac(p.openingKillsT, p.openingKillsT + p.openingDeathsT) },
   { key: 'openCt', label: 'CT 首杀', title: 'CT 方开局 击杀/尝试', value: p => p.openingKillsCt, text: p => frac(p.openingKillsCt, p.openingKillsCt + p.openingDeathsCt) },
-  { key: 'trade', label: '补枪', title: '补枪成功 / 补枪机会（5 秒内）', value: p => p.tradeKills, text: p => frac(p.tradeKills, p.tradeKillOpportunities) },
+  { key: 'trade', metric: 'tradeKills', label: '补枪', title: '补枪成功 / 补枪机会（5 秒内）', value: p => p.tradeKills, text: p => frac(p.tradeKills, p.tradeKillOpportunities) },
   { key: 'tradePct', label: '补枪率', value: p => pct(p.tradeKills, p.tradeKillOpportunities), text: p => `${p.derived.tradeKillPct.toFixed(0)}%` },
-  { key: 'traded', label: '被补', title: '阵亡后 5 秒内被队友补回 / 有队友存活的阵亡', value: p => p.tradedDeaths, text: p => frac(p.tradedDeaths, p.tradedDeathOpportunities) },
+  { key: 'traded', metric: 'tradedDeaths', label: '被补', title: '阵亡后 5 秒内被队友补回 / 有队友存活的阵亡', value: p => p.tradedDeaths, text: p => frac(p.tradedDeaths, p.tradedDeathOpportunities) },
   { key: 'tradedPct', label: '被补率', value: p => pct(p.tradedDeaths, p.tradedDeathOpportunities), text: p => `${p.derived.tradedDeathPct.toFixed(0)}%` },
-  { key: 'clutch', label: '残局', title: '1vN 胜 / 尝试（全部 N）', value: p => sum(p.clutchWins, 1), text: p => frac(sum(p.clutchWins, 1), sum(p.clutchAttempts, 1)) },
+  { key: 'clutch', metric: 'clutch', label: '残局', title: '1vN 胜 / 尝试（全部 N）', value: p => sum(p.clutchWins, 1), text: p => frac(sum(p.clutchWins, 1), sum(p.clutchAttempts, 1)) },
   { key: 'c1', label: '1v1', value: p => p.clutchWins[1] ?? 0, text: p => frac(p.clutchWins[1] ?? 0, p.clutchAttempts[1] ?? 0) },
   { key: 'c2', label: '1v2', value: p => p.clutchWins[2] ?? 0, text: p => frac(p.clutchWins[2] ?? 0, p.clutchAttempts[2] ?? 0) },
   { key: 'c3', label: '1v3+', value: p => sum(p.clutchWins, 3), text: p => frac(sum(p.clutchWins, 3), sum(p.clutchAttempts, 3)) },
@@ -166,15 +168,15 @@ const UTILITY: Col[] = [
   { key: 'he', label: 'HE', value: p => p.heThrown },
   { key: 'smoke', label: '烟雾', value: p => p.smokesThrown },
   { key: 'molo', label: '燃烧', value: p => p.molotovsThrown },
-  { key: 'enemyPerFlash', label: '致盲/闪', title: '每颗闪光平均致盲敌人数', value: p => p.derived.enemiesFlashedPerFlash, digits: 2, unavailable: noBlind },
-  { key: 'blindSecs', label: '时长/闪', title: '每颗闪光平均致盲敌人总秒数', value: p => p.derived.enemyBlindSecondsPerFlash, digits: 2, unavailable: noBlind },
-  { key: 'teamFlash', label: '闪队友/闪', title: '每颗闪光平均闪到的队友数', value: p => p.derived.teammatesFlashedPerFlash, digits: 2, unavailable: noBlind },
-  { key: 'flashA', label: '闪光助攻', value: p => p.flashAssists },
+  { key: 'enemyPerFlash', metric: 'flashEnemies', label: '致盲/闪', title: '每颗闪光平均致盲敌人数', value: p => p.derived.enemiesFlashedPerFlash, digits: 2, unavailable: noBlind },
+  { key: 'blindSecs', metric: 'flashDuration', label: '时长/闪', title: '每颗闪光平均致盲敌人总秒数', value: p => p.derived.enemyBlindSecondsPerFlash, digits: 2, unavailable: noBlind },
+  { key: 'teamFlash', metric: 'teamFlashes', label: '闪队友/闪', title: '每颗闪光平均闪到的队友数', value: p => p.derived.teammatesFlashedPerFlash, digits: 2, unavailable: noBlind },
+  { key: 'flashA', metric: 'flashAssists', label: '闪光助攻', value: p => p.flashAssists },
   { key: 'heDmg', label: 'HE 伤害', value: p => p.heDamage },
   { key: 'fireDmg', label: '燃烧伤害', value: p => p.fireDamage },
-  { key: 'utilDmg', label: '道具伤害', title: 'HE + 燃烧对敌人的伤害', value: p => p.derived.utilityDamage },
-  { key: 'utilPr', label: '投掷/回合', value: p => p.derived.utilityThrownPerRound, digits: 2 },
-  { key: 'unused', label: '死亡浪费', title: '死亡时手里没用掉的道具价值（累计）', value: p => p.unusedUtilityValue, text: p => fmtMoney(p.unusedUtilityValue) },
+  { key: 'utilDmg', metric: 'utilityDamage', label: '道具伤害', title: 'HE + 燃烧对敌人的伤害', value: p => p.derived.utilityDamage },
+  { key: 'utilPr', metric: 'utilityPerRound', label: '投掷/回合', value: p => p.derived.utilityThrownPerRound, digits: 2 },
+  { key: 'unused', metric: 'unusedUtility', label: '死亡浪费', title: '死亡时手里没用掉的道具价值（累计）', value: p => p.unusedUtilityValue, text: p => fmtMoney(p.unusedUtilityValue) },
 ];
 
 const avg = (n: number, d: number) => (d > 0 ? n / d : null);
@@ -185,7 +187,7 @@ const ECONOMY: Col[] = [
   { key: 'dmgPerK', label: '伤害/千元', title: '总伤害 ÷ 总装备价值（千元）', value: p => { const s = e(p); return s && s.equip > 0 ? s.damage / (s.equip / 1000) : null; }, digits: 1 },
   { key: 'fullK', label: '全起 KPR', title: '本队全起回合的每回合击杀（悬停看击杀 / 回合）', value: p => avg(e(p)?.fullK ?? 0, e(p)?.fullR ?? 0), digits: 2, hint: p => `${e(p)?.fullK ?? 0} 杀 / ${e(p)?.fullR ?? 0} 回合` },
   { key: 'lowK', label: 'ECO/强起 KPR', title: '本队 ECO 或强起回合的每回合击杀（悬停看击杀 / 回合）', value: p => avg(e(p)?.lowK ?? 0, e(p)?.lowR ?? 0), digits: 2, hint: p => `${e(p)?.lowK ?? 0} 杀 / ${e(p)?.lowR ?? 0} 回合` },
-  { key: 'unusedE', label: '死亡浪费', title: '死亡时手里没用掉的道具价值（累计）', value: p => p.unusedUtilityValue, text: p => fmtMoney(p.unusedUtilityValue) },
+  { key: 'unusedE', metric: 'unusedUtility', label: '死亡浪费', title: '死亡时手里没用掉的道具价值（累计）', value: p => p.unusedUtilityValue, text: p => fmtMoney(p.unusedUtilityValue) },
 ];
 
 const columns = computed(() => ({ basic: BASIC, duels: DUELS, utility: UTILITY, economy: ECONOMY })[tab.value]);
@@ -254,6 +256,7 @@ function cellClass(c: Col, p: PlayerMatchStatsDto) {
 th.sortable { cursor: pointer; user-select: none; white-space: nowrap; }
 th.sortable:hover { color: var(--text); }
 th.sorted { color: var(--text); }
+.col-help { margin-left: 4px; }
 .sort-mark { display: inline-block; width: 10px; text-align: left; }
 
 .player-link { color: inherit; text-decoration: none; }

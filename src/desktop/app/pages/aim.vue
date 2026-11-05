@@ -4,11 +4,11 @@
     <div class="toolbar">
       <div class="who">
         <span class="who-label">选手</span>
-        <select v-if="persons.length > 1" v-model="steamid" class="select">
-          <option v-for="p in persons" :key="p.steamids[0]" :value="p.steamids[0]">{{ p.displayName }}</option>
+        <select v-if="options.length > 1" v-model="steamid" class="select" aria-label="选手">
+          <option v-for="o in options" :key="o.steamid" :value="o.steamid">{{ o.label }}</option>
         </select>
         <span v-else class="who-name">{{ personName }}</span>
-        <span class="mono muted">{{ steamid }}</span>
+        <span v-if="steamid" class="mono muted">{{ steamid }}</span>
       </div>
       <div class="toolbar-right">
         <select v-model="weapon" class="select" aria-label="武器">
@@ -21,196 +21,198 @@
       </div>
     </div>
 
-    <div v-if="usingFallback" class="callout callout-warning">
-      还没有「我关注的人」，暂时显示默认账号 <span class="mono">{{ FALLBACK_STEAMID }}</span>。
-      到 <NuxtLink to="/players">选手</NuxtLink> 页找到自己并点「关注」，这里就会默认显示你。
-    </div>
+    <MainPlayerNotice v-if="!route.query.steamid" text="设置后这里默认显示你的枪法数据。" />
     <div v-if="error" class="callout callout-danger">{{ error }}</div>
+    <div v-if="ready && !steamid" class="empty">
+      {{ options.length ? '在上方选一个选手查看枪法数据。' : '设置主玩家，或在选手页关注几个人后，就能在这里查看枪法数据。' }}
+    </div>
 
-    <!-- 枪法总览 -->
-    <section class="block">
-      <SectionHeader
-        title="枪法总览"
-        size="lg"
-        :description="overviewDesc"
-      />
-      <AimSummary v-if="stats" :stats="stats" />
-      <div v-else-if="loading" class="empty">加载中…</div>
-    </section>
-
-    <!-- 武器 -->
-    <section v-if="stats && stats.weapons.length" class="block">
-      <SectionHeader title="按武器" size="lg" :count="stats.weapons.length" description="点击可压枪分析的武器，查看它的平均弹道" />
-      <div class="table-wrap">
-        <table class="data-table compact">
-          <thead>
-            <tr>
-              <th>武器</th>
-              <th class="num">射击</th>
-              <th class="num">命中率</th>
-              <th class="num">爆头率</th>
-              <th class="num">可见时命中</th>
-              <th class="num">首发命中</th>
-              <th class="num">急停率</th>
-              <th class="num">TTD</th>
-              <th class="num">准星偏移</th>
-              <th class="num">连发</th>
-              <th class="num">压枪控制</th>
-              <th class="num">开始崩</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="w in stats.weapons"
-              :key="w.weapon"
-              :class="{ clickable: isSprayWeapon(w.weapon), selected: w.weapon === sprayWeapon }"
-              @click="isSprayWeapon(w.weapon) && pickSprayWeapon(w.weapon)"
-            >
-              <td class="strong">{{ weaponName(w.weapon) }}</td>
-              <td class="num">{{ w.shots }}</td>
-              <td class="num">{{ pct(w.accuracy) }}</td>
-              <td class="num">{{ pct(w.headshotRate) }}</td>
-              <td class="num">{{ visPct(w.visibleAccuracy) }}</td>
-              <td class="num">{{ visPct(w.firstShotAccuracy) }}</td>
-              <td class="num">{{ pct(w.counterStrafeRate) }}</td>
-              <td class="num">{{ vis(w.ttdMedianMs, (v) => `${v.toFixed(0)} ms`) }}</td>
-              <td class="num">{{ vis(w.crosshairMedianDeg, (v) => `${v.toFixed(1)}°`) }}</td>
-              <td class="num">{{ w.sprays || '—' }}</td>
-              <td class="num">{{ fmtNum(w.sprayControl) }}</td>
-              <td class="num">{{ w.breakShot ? `第 ${w.breakShot} 发` : '—' }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- 压枪分析 -->
-    <section class="block">
-      <SectionHeader title="压枪分析" size="lg" :description="sprayDesc">
-        <AimHelp title="怎么读" align="right">
-          <p>以第一发为原点。后坐力（−2 × Δpunch）决定了不压枪时子弹会去哪里，把它镜像过来就是理想的压枪轨迹。</p>
-          <p>垂直误差 &gt; 0 表示子弹偏高（压少了），&lt; 0 表示压多了；水平误差 &gt; 0 表示偏右。</p>
-          <p>跟移动中的目标会让水平误差变大，这部分是有意的跟枪，不一定是没压住。</p>
-        </AimHelp>
-      </SectionHeader>
-      <div class="weapon-tabs" role="tablist">
-        <button
-          v-for="w in SPRAY_WEAPONS"
-          :key="w"
-          type="button"
-          role="tab"
-          class="wtab"
-          :class="{ on: w === sprayWeapon, empty: !patternOf(w) }"
-          :aria-selected="w === sprayWeapon"
-          @click="pickSprayWeapon(w)"
-        >
-          {{ weaponName(w) }}
-          <span class="num wtab-n">{{ patternOf(w)?.sprays ?? 0 }}</span>
-        </button>
-      </div>
-      <div v-if="spraysLoading && !sprayRes" class="empty">加载中…</div>
-      <AimSprayPattern v-else-if="currentPattern && currentPattern.sprays > 0" :key="sprayWeapon" :pattern="currentPattern" />
-      <div v-else class="empty">{{ weaponName(sprayWeapon) }} 在这个范围内没有连发（至少连续 4 发才算一次连发）。</div>
-    </section>
-
-    <!-- 趋势 -->
-    <section v-if="stats && stats.trend.length" class="block">
-      <SectionHeader title="趋势" size="lg" :description="`${weaponName(weapon || null)} · 每场一个点，从旧到新`">
-        <div class="seg">
-          <button
-            v-for="m in TREND_METRICS"
-            :key="m.key"
-            type="button"
-            class="seg-btn"
-            :class="{ on: trendMetric === m.key }"
-            @click="trendMetric = m.key"
-          >
-            {{ m.label }}
-          </button>
-        </div>
-      </SectionHeader>
-      <div class="card card-pad">
-        <AimTrendChart
-          :points="stats.trend"
-          :metric="trendDef.key"
-          :label="trendDef.label"
-          :unit="trendDef.unit"
-          :percent="trendDef.percent"
+    <template v-if="steamid">
+      <!-- 枪法总览 -->
+      <section class="block">
+        <SectionHeader
+          title="枪法总览"
+          size="lg"
+          :description="overviewDesc"
         />
-      </div>
-    </section>
+        <AimSummary v-if="stats" :stats="stats" />
+        <div v-else-if="loading" class="empty">加载中…</div>
+      </section>
 
-    <!-- 单次连发 -->
-    <section class="block">
-      <SectionHeader title="单次连发" size="lg" :description="`按对局浏览每一次连发${sprayFilterWeapon ? `（${weaponName(sprayFilterWeapon)}）` : ''}`" />
-      <div class="browser">
-        <div class="table-wrap match-list">
-          <table class="data-table compact">
-            <thead>
-              <tr><th>对局</th><th class="num">连发</th><th class="num">控制</th></tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="m in sprayMatches"
-                :key="m.matchId"
-                class="clickable"
-                :class="{ selected: m.matchId === browseMatch }"
-                @click="browseMatch = m.matchId"
-              >
-                <td class="truncate">
-                  <span class="strong">{{ matchLabel(m) }}</span>
-                  <span class="tag">{{ m.platform }}</span>
-                </td>
-                <td class="num">{{ m.sprays }}</td>
-                <td class="num">{{ fmtNum(m.sprayControl) }}</td>
-              </tr>
-              <tr v-if="!sprayMatches.length"><td colspan="3" class="empty">没有连发</td></tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="table-wrap spray-list">
+      <!-- 武器 -->
+      <section v-if="stats && stats.weapons.length" class="block">
+        <SectionHeader title="按武器" size="lg" :count="stats.weapons.length" description="点击可压枪分析的武器，查看它的平均弹道" />
+        <div class="table-wrap">
           <table class="data-table compact">
             <thead>
               <tr>
-                <th class="num">回合</th>
                 <th>武器</th>
-                <th class="num">发数</th>
-                <th class="num">命中</th>
-                <th class="num">控制</th>
-                <th class="num">误差</th>
-                <th class="num">开始崩</th>
-                <th>结果</th>
+                <th class="num">射击</th>
+                <th class="num">命中率 <MetricHelp metric="accuracy" side="bottom" /></th>
+                <th class="num">爆头率 <MetricHelp metric="headAccuracy" side="bottom" /></th>
+                <th class="num">可见时命中 <MetricHelp metric="accuracySpotted" side="bottom" /></th>
+                <th class="num">首发命中 <MetricHelp metric="firstBulletAccuracy" side="bottom" /></th>
+                <th class="num">急停率 <MetricHelp metric="counterStrafe" side="bottom" /></th>
+                <th class="num">TTD <MetricHelp metric="ttd" side="bottom" /></th>
+                <th class="num">准星偏移 <MetricHelp metric="crosshairPlacement" side="bottom" /></th>
+                <th class="num">连发</th>
+                <th class="num">压枪控制 <MetricHelp metric="sprayControl" side="bottom" /></th>
+                <th class="num">开始崩 <MetricHelp metric="breakShot" side="bottom" /></th>
               </tr>
             </thead>
             <tbody>
               <tr
-                v-for="s in matchSprays"
-                :key="s.id"
-                class="clickable"
-                :class="{ selected: s.id === browseSprayId }"
-                @click="browseSprayId = s.id"
+                v-for="w in stats.weapons"
+                :key="w.weapon"
+                :class="{ clickable: isSprayWeapon(w.weapon), selected: w.weapon === sprayWeapon }"
+                @click="isSprayWeapon(w.weapon) && pickSprayWeapon(w.weapon)"
               >
-                <td class="num">{{ s.round }}</td>
-                <td class="strong">{{ weaponName(s.weapon) }}</td>
-                <td class="num">{{ s.shots.length }}</td>
-                <td class="num">{{ s.hits }}</td>
-                <td class="num">{{ fmtNum(s.control) }}</td>
-                <td class="num" :class="{ bad: s.meanErr > BREAK_DEG }">{{ s.meanErr.toFixed(2) }}°</td>
-                <td class="num">{{ s.breakShot ?? '—' }}</td>
-                <td><StatusChip v-if="s.killed" tone="success" label="击杀" /><span v-else class="dim">—</span></td>
+                <td class="strong">{{ weaponName(w.weapon) }}</td>
+                <td class="num">{{ w.shots }}</td>
+                <td class="num">{{ pct(w.accuracy) }}</td>
+                <td class="num">{{ pct(w.headshotRate) }}</td>
+                <td class="num">{{ visPct(w.visibleAccuracy) }}</td>
+                <td class="num">{{ visPct(w.firstShotAccuracy) }}</td>
+                <td class="num">{{ pct(w.counterStrafeRate) }}</td>
+                <td class="num">{{ vis(w.ttdMedianMs, (v) => `${v.toFixed(0)} ms`) }}</td>
+                <td class="num">{{ vis(w.crosshairMedianDeg, (v) => `${v.toFixed(1)}°`) }}</td>
+                <td class="num">{{ w.sprays || '—' }}</td>
+                <td class="num">{{ fmtNum(w.sprayControl) }}</td>
+                <td class="num">{{ w.breakShot ? `第 ${w.breakShot} 发` : '—' }}</td>
               </tr>
-              <tr v-if="browseLoading"><td colspan="8" class="empty">加载中…</td></tr>
-              <tr v-else-if="browseMatch && !matchSprays.length"><td colspan="8" class="empty">这场没有连发</td></tr>
-              <tr v-else-if="!browseMatch"><td colspan="8" class="empty">在左侧选一场对局</td></tr>
             </tbody>
           </table>
         </div>
-      </div>
-      <div v-if="browseSpray" class="card card-pad spray-detail-card">
-        <AimSprayDetail :key="browseSpray.id" :spray="browseSpray" />
-      </div>
-    </section>
+      </section>
+
+      <!-- 压枪分析 -->
+      <section class="block">
+        <SectionHeader title="压枪分析" size="lg" :description="sprayDesc">
+          <AimHelp title="怎么读" align="right">
+            <p>以第一发为原点。后坐力（−2 × Δpunch）决定了不压枪时子弹会去哪里，把它镜像过来就是理想的压枪轨迹。</p>
+            <p>垂直误差 &gt; 0 表示子弹偏高（压少了），&lt; 0 表示压多了；水平误差 &gt; 0 表示偏右。</p>
+            <p>跟移动中的目标会让水平误差变大，这部分是有意的跟枪，不一定是没压住。</p>
+          </AimHelp>
+        </SectionHeader>
+        <div class="weapon-tabs" role="tablist">
+          <button
+            v-for="w in SPRAY_WEAPONS"
+            :key="w"
+            type="button"
+            role="tab"
+            class="wtab"
+            :class="{ on: w === sprayWeapon, empty: !patternOf(w) }"
+            :aria-selected="w === sprayWeapon"
+            @click="pickSprayWeapon(w)"
+          >
+            {{ weaponName(w) }}
+            <span class="num wtab-n">{{ patternOf(w)?.sprays ?? 0 }}</span>
+          </button>
+        </div>
+        <div v-if="spraysLoading && !sprayRes" class="empty">加载中…</div>
+        <AimSprayPattern v-else-if="currentPattern && currentPattern.sprays > 0" :key="sprayWeapon" :pattern="currentPattern" />
+        <div v-else class="empty">{{ weaponName(sprayWeapon) }} 在这个范围内没有连发（至少连续 4 发才算一次连发）。</div>
+      </section>
+
+      <!-- 趋势 -->
+      <section v-if="stats && stats.trend.length" class="block">
+        <SectionHeader title="趋势" size="lg" :description="`${weaponName(weapon || null)} · 每场一个点，从旧到新`">
+          <div class="seg">
+            <button
+              v-for="m in TREND_METRICS"
+              :key="m.key"
+              type="button"
+              class="seg-btn"
+              :class="{ on: trendMetric === m.key }"
+              @click="trendMetric = m.key"
+            >
+              {{ m.label }}
+            </button>
+          </div>
+        </SectionHeader>
+        <div class="card card-pad">
+          <AimTrendChart
+            :points="stats.trend"
+            :metric="trendDef.key"
+            :label="trendDef.label"
+            :unit="trendDef.unit"
+            :percent="trendDef.percent"
+          />
+        </div>
+      </section>
+
+      <!-- 单次连发 -->
+      <section class="block">
+        <SectionHeader title="单次连发" size="lg" :description="`按对局浏览每一次连发${sprayFilterWeapon ? `（${weaponName(sprayFilterWeapon)}）` : ''}`" />
+        <div class="browser">
+          <div class="table-wrap match-list">
+            <table class="data-table compact">
+              <thead>
+                <tr><th>对局</th><th class="num">连发</th><th class="num">控制 <MetricHelp metric="sprayControl" side="bottom" /></th></tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="m in sprayMatches"
+                  :key="m.matchId"
+                  class="clickable"
+                  :class="{ selected: m.matchId === browseMatch }"
+                  @click="browseMatch = m.matchId"
+                >
+                  <td class="truncate">
+                    <span class="strong">{{ matchLabel(m) }}</span>
+                    <span class="tag">{{ m.platform }}</span>
+                  </td>
+                  <td class="num">{{ m.sprays }}</td>
+                  <td class="num">{{ fmtNum(m.sprayControl) }}</td>
+                </tr>
+                <tr v-if="!sprayMatches.length"><td colspan="3" class="empty">没有连发</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="table-wrap spray-list">
+            <table class="data-table compact">
+              <thead>
+                <tr>
+                  <th class="num">回合</th>
+                  <th>武器</th>
+                  <th class="num">发数</th>
+                  <th class="num">命中</th>
+                  <th class="num">控制 <MetricHelp metric="sprayControl" side="bottom" /></th>
+                  <th class="num">误差 <MetricHelp metric="sprayError" side="bottom" /></th>
+                  <th class="num">开始崩 <MetricHelp metric="breakShot" side="bottom" /></th>
+                  <th>结果</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="s in matchSprays"
+                  :key="s.id"
+                  class="clickable"
+                  :class="{ selected: s.id === browseSprayId }"
+                  @click="browseSprayId = s.id"
+                >
+                  <td class="num">{{ s.round }}</td>
+                  <td class="strong">{{ weaponName(s.weapon) }}</td>
+                  <td class="num">{{ s.shots.length }}</td>
+                  <td class="num">{{ s.hits }}</td>
+                  <td class="num">{{ fmtNum(s.control) }}</td>
+                  <td class="num" :class="{ bad: s.meanErr > BREAK_DEG }">{{ s.meanErr.toFixed(2) }}°</td>
+                  <td class="num">{{ s.breakShot ?? '—' }}</td>
+                  <td><StatusChip v-if="s.killed" tone="success" label="击杀" /><span v-else class="dim">—</span></td>
+                </tr>
+                <tr v-if="browseLoading"><td colspan="8" class="empty">加载中…</td></tr>
+                <tr v-else-if="browseMatch && !matchSprays.length"><td colspan="8" class="empty">这场没有连发</td></tr>
+                <tr v-else-if="!browseMatch"><td colspan="8" class="empty">在左侧选一场对局</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div v-if="browseSpray" class="card card-pad spray-detail-card">
+          <AimSprayDetail :key="browseSpray.id" :spray="browseSpray" />
+        </div>
+      </section>
+    </template>
   </div>
 </template>
 
@@ -219,7 +221,6 @@ import type { AimFilters, AimStats, AimTrendPoint, PersonSummaryDto, Spray, Spra
 import {
   aggregateSprays,
   BREAK_DEG,
-  FALLBACK_STEAMID,
   fmtNum,
   fmtPct,
   getAimStats,
@@ -234,12 +235,39 @@ import {
 const route = useRoute();
 
 // ── 选手 ──
+// 默认看主玩家（「我」）；下拉里另外列出「我关注的人」，方便切换。?steamid= 优先。
+const main = useMainPlayer();
 const persons = ref<PersonSummaryDto[]>([]);
 const steamid = ref<string>('');
-const usingFallback = ref(false);
+/** 初始选手已经确定（避免首屏闪一下「没有选手」） */
+const ready = ref(false);
+
+const options = computed(() => {
+  const out: { steamid: string; label: string }[] = [];
+  const seen = new Set<string>();
+  const mainId = main.steamid.value;
+  if (mainId) {
+    out.push({ steamid: mainId, label: `${main.displayName.value ?? mainId}（我）` });
+    seen.add(mainId);
+  }
+  for (const p of persons.value) {
+    // 主玩家所属的人可能挂多个 steamid：已经作为「我」列出时跳过
+    if (mainId && p.steamids.includes(mainId)) continue;
+    const id = p.steamids[0]!;
+    if (seen.has(id)) continue;
+    seen.add(id);
+    out.push({ steamid: id, label: p.displayName });
+  }
+  // ?steamid= 指定的人不在列表里时也要能显示
+  if (steamid.value && !seen.has(steamid.value)) out.push({ steamid: steamid.value, label: steamid.value });
+  return out;
+});
+
 const personName = computed(() => {
+  if (!steamid.value) return '未选择';
+  if (steamid.value === main.steamid.value) return main.displayName.value ?? '我';
   const p = persons.value.find((x) => x.steamids.includes(steamid.value));
-  return p?.displayName ?? (usingFallback.value ? '默认账号' : '未关注的选手');
+  return p?.displayName ?? '未关注的选手';
 });
 
 // ── 筛选 ──
@@ -279,7 +307,12 @@ const weaponOptions = computed(() => {
 
 let statsSeq = 0;
 async function loadStats() {
-  if (!steamid.value) return;
+  if (!steamid.value) {
+    statsSeq++;
+    stats.value = null;
+    loading.value = false;
+    return;
+  }
   const seq = ++statsSeq;
   loading.value = true;
   error.value = '';
@@ -355,7 +388,10 @@ function pickSprayWeapon(w: string) {
 }
 
 async function loadSprays() {
-  if (!steamid.value) return;
+  if (!steamid.value) {
+    sprayRes.value = null;
+    return;
+  }
   spraysLoading.value = true;
   try {
     sprayRes.value = await getSprays(steamid.value);
@@ -435,27 +471,24 @@ watch(steamid, () => {
 
 // 同一页面内改 ?steamid= 也要切换
 watch(() => route.query.steamid, (q) => {
-  if (typeof q === 'string' && q && q !== steamid.value) {
-    usingFallback.value = false;
-    steamid.value = q;
-  }
+  if (typeof q === 'string' && q && q !== steamid.value) steamid.value = q;
+});
+
+// 主玩家变化：没有用 ?steamid= 指定选手时跟着切换
+main.onChange((p) => {
+  if (typeof route.query.steamid === 'string' && route.query.steamid) return;
+  steamid.value = p.steamid ?? '';
 });
 
 onMounted(async () => {
   const q = typeof route.query.steamid === 'string' ? route.query.steamid : '';
-  try {
-    persons.value = (await listFollowedPersons()).filter((p) => p.steamids.length > 0);
-  } catch {
-    persons.value = [];
-  }
-  if (q) {
-    steamid.value = q;
-  } else if (persons.value.length) {
-    steamid.value = persons.value[0]!.steamids[0]!;
-  } else {
-    usingFallback.value = true;
-    steamid.value = FALLBACK_STEAMID;
-  }
+  const [, list] = await Promise.all([
+    main.ready,
+    listFollowedPersons().catch(() => [] as PersonSummaryDto[]),
+  ]);
+  persons.value = list.filter((p) => p.steamids.length > 0);
+  steamid.value = q || main.steamid.value || '';
+  ready.value = true;
 });
 </script>
 

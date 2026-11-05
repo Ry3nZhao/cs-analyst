@@ -1,6 +1,8 @@
 <template>
   <div class="timeline">
-    <SectionHeader title="回合时间线" :count="detail.rounds.length" description="点击回合查看击杀流水。经济：P 手枪局 · E ECO · F 强起 · B 全起" size="lg" />
+    <SectionHeader title="回合时间线" :count="detail.rounds.length" description="点击回合查看击杀流水。经济：P 手枪局 · E ECO · F 强起 · B 全起" size="lg">
+      <MetricHelp metric="buyType" label side="left" />
+    </SectionHeader>
 
     <div class="strip-wrap">
       <div class="strip">

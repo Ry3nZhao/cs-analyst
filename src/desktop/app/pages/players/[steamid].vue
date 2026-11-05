@@ -27,6 +27,14 @@
               ><span class="toggle-knob" /></button>
               <span>关注</span>
             </label>
+            <button
+              v-if="!isMe && person.steamids.length"
+              type="button"
+              class="btn btn-sm"
+              :disabled="busy"
+              title="把这个人设为「我」：交手、枪法等页面默认以他为视角"
+              @click="setAsMain"
+            >设为主玩家</button>
             <button type="button" class="btn btn-sm" @click="openEdit">编辑</button>
             <button type="button" class="btn btn-sm" @click="mergeOpen = true">合并到…</button>
             <button type="button" class="btn btn-sm" @click="manageOpen = true">身份与合并</button>
@@ -73,11 +81,11 @@
         <div v-else class="stat-grid">
           <StatTile label="场次" :value="stats.matches" compact :hint="`${stats.wins} 胜 ${stats.losses} 负${stats.draws ? ` ${stats.draws} 平` : ''}`" />
           <StatTile label="胜率" :value="fmtPct(stats.winRate)" compact />
-          <StatTile label="K/D" :value="fmtNum(stats.kd)" compact />
-          <StatTile label="ADR" :value="fmtNum(stats.adr, 1)" compact />
-          <StatTile label="KAST" :value="fmtNum(stats.kast, 1)" unit="%" compact />
-          <StatTile label="HLTV 2.0" :value="fmtNum(stats.rating)" compact hint="近似值，仅供参考" />
-          <StatTile label="爆头率" :value="fmtNum(stats.hsPct, 1)" unit="%" compact />
+          <StatTile label="K/D" metric="kd" :value="fmtNum(stats.kd)" compact />
+          <StatTile label="ADR" metric="adr" :value="fmtNum(stats.adr, 1)" compact />
+          <StatTile label="KAST" metric="kast" :value="fmtNum(stats.kast, 1)" unit="%" compact />
+          <StatTile label="HLTV 2.0" metric="rating" :value="fmtNum(stats.rating)" compact hint="近似值，仅供参考" />
+          <StatTile label="爆头率" metric="hsPct" :value="fmtNum(stats.hsPct, 1)" unit="%" compact />
         </div>
       </section>
 
@@ -92,8 +100,9 @@
           >对比「我」</button>
           <PersonPicker class="cmp-picker" small :exclude="[person.id]" placeholder="对比其他人…" @pick="p => (compareWith = p)" />
         </SectionHeader>
-        <div v-if="meLoaded && !me" class="callout callout-info">
-          还没有设置「我」：在自己的选手页打开「关注」，就会把你设为「我」，这里默认显示和你的交手。
+        <MainPlayerNotice v-if="!isMainSet" text="设置后这里默认显示和你的交手。" />
+        <div v-else-if="meLoaded && !me" class="callout callout-warning">
+          主玩家 <span class="mono">{{ mainSteamid }}</span> 还不在本地库里，解析过他的对局后这里会默认显示和他的交手。
         </div>
         <div v-else-if="isMe && !compareWith" class="callout">这是你自己的页面。在右上角选一个人，查看你和他的交手。</div>
         <HeadToHeadPanel v-if="compareWith" :a="person.id" :b="compareWith.id" :refresh-key="refreshKey" />
@@ -157,8 +166,8 @@
                 <th class="num">K</th>
                 <th class="num">D</th>
                 <th class="num">A</th>
-                <th class="num">ADR</th>
-                <th class="num">Rating</th>
+                <th class="num">ADR <MetricHelp metric="adr" side="bottom" /></th>
+                <th class="num">Rating <MetricHelp metric="rating" side="bottom" /></th>
               </tr>
             </thead>
             <tbody>
@@ -338,7 +347,8 @@ const minTogether = ref(2);
 const route = useRoute();
 const router = useRouter();
 const toast = useToast();
-const { me, loaded: meLoaded, refreshMe } = useMe();
+const { me, loaded: meLoaded, refreshMe, mainSteamid, isMainSet } = useMe();
+const mainPlayer = useMainPlayer();
 
 const param = computed(() => String(route.params.steamid ?? ''));
 const detail = ref<PersonDetailDto | null>(null);
@@ -346,7 +356,7 @@ const notFound = ref(false);
 const error = ref('');
 const person = computed(() => detail.value!.person);
 const isMe = computed(() => !!me.value && !!detail.value && me.value.id === detail.value.person.id);
-const followHint = computed(() => (me.value ? '关注的人排在选手列表最上面' : '关注后，第一个关注的人会被当作「我」'));
+const followHint = '关注 = 个人收藏，关注的人排在选手列表最上面；「我」由主玩家决定';
 
 const stats = ref<CombinedStats | null>(null);
 const statsError = ref('');
@@ -437,13 +447,27 @@ function fail(title: string, e: unknown) {
   toast.add({ title, description: errorMessage(e), color: 'error' });
 }
 
+// ── 主玩家 ──
+async function setAsMain() {
+  const sid = person.value.steamids[0];
+  if (!sid) return;
+  busy.value = true;
+  try {
+    await mainPlayer.set(sid); // onChange 会触发 refreshMe，进而更新「我」和默认对比
+    toast.add({ title: `已把「${person.value.displayName}」设为主玩家`, color: 'success' });
+  } catch (e) {
+    fail('设置主玩家失败', e);
+  } finally {
+    busy.value = false;
+  }
+}
+
 // ── 关注 / 编辑 ──
 async function toggleFollow() {
   if (!detail.value) return;
   try {
     const d = await tauriInvoke<PersonDetailDto>('update_person', { id: person.value.id, patch: { followed: !person.value.followed } });
-    detail.value = d;
-    await refreshMe();
+    detail.value = d; // 关注只是收藏，不影响「我」
   } catch (e) {
     fail('操作失败', e);
   }

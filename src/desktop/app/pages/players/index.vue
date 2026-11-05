@@ -12,14 +12,12 @@
 
     <p v-if="error" class="form-error">{{ error }}</p>
 
-    <div v-if="meLoaded && !me" class="callout callout-info">
-      还没有设置「我」。打开自己的选手页，点「关注」，就会把你设为「我」，交手数据会以你为视角显示。
-    </div>
+    <MainPlayerNotice text="设置后，选手页的交手数据默认以你为视角显示。" />
 
     <section class="block">
       <SectionHeader
         title="我关注的人"
-        :description="followed.length ? '列表第一个人视为「我」' : undefined"
+        :description="followed.length ? '个人收藏，排在最上面；「我」由主玩家决定' : undefined"
         :count="followed.length"
         size="lg"
       />
@@ -48,7 +46,7 @@ definePageMeta({ layout: 'default' });
 
 const LIMIT = 100;
 const toast = useToast();
-const { me, loaded: meLoaded, refreshMe } = useMe();
+const { me, refreshMe } = useMe();
 
 const query = ref('');
 const followed = ref<PersonSummaryDto[]>([]);
@@ -85,7 +83,7 @@ watch(query, () => {
 async function toggleFollow(p: PersonSummaryDto) {
   try {
     await tauriInvoke<PersonDetailDto>('update_person', { id: p.id, patch: { followed: !p.followed } });
-    await Promise.all([load(), refreshMe()]);
+    await load(); // 关注只是收藏，不影响「我」
   } catch (e) {
     toast.add({ title: '操作失败', description: errorMessage(e), color: 'error' });
   }

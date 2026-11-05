@@ -63,7 +63,7 @@
 
 | 组件 | 用途 | 主要参数 |
 |---|---|---|
-| `<StatTile>` | 数据卡，一个指标一张 | `label`、`value`、`unit`、`hint`、`tone`、`delta`、`higherIsBetter`、`compact` |
+| `<StatTile>` | 数据卡，一个指标一张 | `label`、`value`、`unit`、`hint`、`tone`、`delta`、`higherIsBetter`、`compact`、`metric`（标签旁显示 `<MetricHelp>`） |
 | `<StatusChip>` | 状态标签 | `tone`（neutral / success / warning / danger / info / accent）、`label`、`pulse`、`dot` |
 | `<SectionHeader>` | 区块标题 + 右侧操作区 | `title`、`description`、`count`、`size`（md / lg），默认插槽放按钮 |
 | `<SideBadge>` | T / CT 阵营标记 | `side`（'T' / 'CT' / 2 / 3）、`variant`（soft / solid / bar） |

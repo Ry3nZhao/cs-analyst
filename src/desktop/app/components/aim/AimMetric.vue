@@ -2,7 +2,10 @@
   <div class="aim-metric" :class="{ unavailable, compact }">
     <div class="m-head">
       <span class="m-label">{{ label }}</span>
-      <AimHelp v-if="help" :title="label" :text="help" :align="helpAlign" />
+      <MetricHelp v-if="metric" :metric="metric">
+        <p v-if="note" class="m-note">{{ note }}</p>
+      </MetricHelp>
+      <AimHelp v-else-if="help" :title="label" :text="help" :align="helpAlign" />
     </div>
     <div class="m-value num">
       <template v-if="unavailable">
@@ -23,6 +26,8 @@
 /**
  * 枪法指标卡：标签 + 「?」说明 + 数值 + 次要说明 + 可选图表（默认插槽）。
  * unavailable 时数值显示「不可用」而不是 0，图表不渲染。
+ * 传 metric（utils/metricGlossary.ts 的 key）时用统一的 <MetricHelp> 说明，note 附在说明末尾；
+ * 否则退回 help 文本。
  */
 import { AIM_HELP } from '~/composables/useAim';
 
@@ -32,6 +37,10 @@ withDefaults(defineProps<{
   unit?: string;
   sub?: string;
   help?: string;
+  /** 指标释义 key，优先于 help */
+  metric?: string;
+  /** 附加在 MetricHelp 说明末尾的补充 */
+  note?: string;
   helpAlign?: 'left' | 'right' | 'center';
   unavailable?: boolean;
   unavailableText?: string;
@@ -62,6 +71,7 @@ withDefaults(defineProps<{
 .m-na { font-size: var(--text-lg); font-weight: 500; color: var(--text-3); }
 .m-sub { font-size: var(--text-xs); color: var(--text-3); line-height: 1.45; }
 .unavailable .m-sub { color: var(--text-disabled); }
+.m-note { margin: 0; white-space: pre-line; }
 .m-chart { margin-top: var(--space-2); display: flex; flex-direction: column; gap: var(--space-2); }
 
 .compact { padding: var(--space-2) var(--space-3); }

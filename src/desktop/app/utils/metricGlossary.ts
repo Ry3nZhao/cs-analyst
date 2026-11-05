@@ -1,8 +1,8 @@
 // W3-C：指标释义数据，供 <MetricHelp metric="adr" /> 使用（Nuxt 自动导入）。
-// 口径来自 docs/stats.md（基础指标、Swing）和 docs/aim.md（枪法、压枪）。改口径时两边一起改。
+// 口径来自 docs/stats.md（基础指标、Swing）、docs/aim.md（枪法、压枪）和 docs/training.md（瞄准训练）。改口径时两边一起改。
 // 参考值是粗略的经验区间（社区常见水平），只用来帮用户建立直觉，不是本地百分位。
 
-export type MetricCategory = 'basic' | 'opening' | 'trade' | 'clutch' | 'utility' | 'economy' | 'aim' | 'spray' | 'swing';
+export type MetricCategory = 'basic' | 'opening' | 'trade' | 'clutch' | 'utility' | 'economy' | 'aim' | 'spray' | 'swing' | 'training';
 
 export interface MetricReference {
   /** 例如「≥ 85」「< 450 ms」 */
@@ -28,7 +28,7 @@ export interface MetricDefinition {
   /** 需要注意的限制，例如数据不可用的情况 */
   caveat?: string;
   /** 文档出处 */
-  source: 'docs/stats.md' | 'docs/aim.md';
+  source: 'docs/stats.md' | 'docs/aim.md' | 'docs/training.md';
 }
 
 export const METRIC_CATEGORY_LABELS: Record<MetricCategory, string> = {
@@ -41,9 +41,11 @@ export const METRIC_CATEGORY_LABELS: Record<MetricCategory, string> = {
   aim: '枪法',
   spray: '压枪',
   swing: 'Swing',
+  training: '瞄准训练',
 };
 
 const BLIND_CAVEAT = 'ESL 等职业服务器的 demo 没有致盲事件，这类场次显示「不可用」，不是 0。';
+const TRAINING_CAVEAT = '训练在应用窗口里运行，WebView 有一定的输入和显示延迟，成绩只适合和自己以前的成绩比。';
 const VIS_CAVEAT = '依赖 demo 里的可见性标记。可见性质量低于 0.7 的对局（例如 ESL 职业 demo）不产出这个指标。spotted 标记比真实进入视野稍晚，数值会比 Leetify 这类用地图几何的工具显得更好，适合人和人、场和场之间比较。';
 
 const list: MetricDefinition[] = [
@@ -471,6 +473,77 @@ const list: MetricDefinition[] = [
     caveat: '+3.2 表示平均每回合让本方胜率提高 3.2%；0 表示和平均水平持平。',
     source: 'docs/stats.md',
   },
+
+  // ── 瞄准训练 ──
+  {
+    key: 'trainingReaction',
+    name: '反应时间（训练）',
+    category: 'training',
+    definition: '屏幕变色到你点击的时间。',
+    calculation: '灰屏随机等 1.2–3.5 秒后变色，刺激时间取变色那一帧的时间戳，点击按事件时间算。变色前点击算犯规，这次重来。主成绩取中位数。',
+    unit: 'ms',
+    higherIsBetter: false,
+    caveat: `${TRAINING_CAVEAT}数值不能和其他工具或网站横向比较，也和 demo 里的反应时间不是一个口径。`,
+    source: 'docs/training.md',
+  },
+  {
+    key: 'flickHitRate',
+    name: '甩枪命中率',
+    category: 'training',
+    definition: '限时内甩过去点掉的目标比例。',
+    calculation: '命中目标数 ÷ 目标数。目标出现在视线 10–38° 外，开枪那一刻视线和目标中心的夹角 ≤ 目标角半径算命中。精度 = 命中 ÷ 开枪数。',
+    unit: '%',
+    higherIsBetter: true,
+    caveat: TRAINING_CAVEAT,
+    source: 'docs/training.md',
+  },
+  {
+    key: 'trackingOnTarget',
+    name: '跟枪在目标上',
+    category: 'training',
+    definition: '准星留在移动目标上的时间占比。',
+    calculation: '在目标上的时间 ÷ 训练时长。目标像对手 AD 一样变向横移，开始前 1 秒静止准备不计。平均偏离 = 准星到目标中心的平均角度。',
+    unit: '%',
+    higherIsBetter: true,
+    caveat: TRAINING_CAVEAT,
+    source: 'docs/training.md',
+  },
+  {
+    key: 'microAccuracy',
+    name: '微调精度',
+    category: 'training',
+    definition: '小目标近距离修正的开枪命中比例。',
+    calculation: '命中 ÷ 开枪数。目标角半径 0.3–0.6°，出现在准星 1.2–4.5° 内。命中率 = 命中目标 ÷ 目标数。',
+    unit: '%',
+    higherIsBetter: true,
+    caveat: TRAINING_CAVEAT,
+    source: 'docs/training.md',
+  },
+  {
+    key: 'strafeSuccess',
+    name: '急停成功率（训练）',
+    category: 'training',
+    definition: '反向急停后，在速度进入精准阈值时开枪的比例。',
+    calculation: '有效开枪里，开枪时速度 ≤ 武器最大速度 × 34%（和 demo 里的急停率同一阈值）的比例。开枪前 0.7 秒内没跑到最大速度 80% 的开枪不计。速度按 CS2 默认的摩擦和加速参数、64 tick 模拟。',
+    unit: '%',
+    higherIsBetter: true,
+    references: [
+      { range: '≥ 85%', label: '优秀', tone: 'good' },
+      { range: '70–85%', label: '平均', tone: 'neutral' },
+      { range: '< 65%', label: '偏低', tone: 'bad' },
+    ],
+    source: 'docs/training.md',
+  },
+  {
+    key: 'strafeTiming',
+    name: '急停时机',
+    category: 'training',
+    definition: '速度进入阈值到你开枪的时间。',
+    calculation: '每次有效开枪：开枪时间 − 速度降到阈值内的时间，取平均。AK-47 全速反向急停约 5 tick（≈ 78 ms）进入阈值，急停键按太久会开始反向加速，窗口大约 9–10 tick。',
+    unit: 'ms',
+    higherIsBetter: false,
+    source: 'docs/training.md',
+  },
 ];
 
 export const METRIC_GLOSSARY: Readonly<Record<string, MetricDefinition>> = Object.freeze(
@@ -504,6 +577,16 @@ const ALIASES: Record<string, string> = {
   control: 'sprayControl',
   meanErr: 'sprayError',
   swingAvg: 'swing',
+  roundSwing: 'swing',
+  kastPct: 'kast',
+  counterStrafeRate: 'counterStrafe',
+  ttdMedianMs: 'ttd',
+  reactionMedianMs: 'reaction',
+  crosshairMedianDeg: 'crosshairPlacement',
+  breakShotIndex: 'breakShot',
+  onTarget: 'trackingOnTarget',
+  successRate: 'strafeSuccess',
+  avgTiming: 'strafeTiming',
 };
 
 export function getMetric(key: string): MetricDefinition | undefined {

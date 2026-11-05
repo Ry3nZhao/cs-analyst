@@ -46,6 +46,8 @@
         </div>
       </header>
 
+      <MainPlayerNotice text="设置后会在计分板和时间线上标出你和你的队伍。" />
+
       <!-- 计分板 -->
       <section>
         <MatchScoreboard :detail="detail" :mine="mySteamIds" :mine-team="mineTeam" />

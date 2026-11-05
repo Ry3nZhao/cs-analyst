@@ -18,6 +18,7 @@
       <div class="as-grid as-grid-vis">
         <AimMetric
           label="Time to Damage"
+          metric="ttd"
           :help="`${AIM_HELP.ttd}\n${AIM_HELP.bias}`"
           :value="fmtNum(o.ttd.median)"
           unit="ms"
@@ -31,6 +32,7 @@
 
         <AimMetric
           label="反应时间"
+          metric="reaction"
           :help="AIM_HELP.reaction"
           :value="fmtNum(o.reaction.median)"
           unit="ms"
@@ -44,6 +46,7 @@
 
         <AimMetric
           label="准星偏移"
+          metric="crosshairPlacement"
           :help="`${AIM_HELP.crosshair}\n${AIM_HELP.bias}`"
           help-align="right"
           :value="fmtNum(o.crosshair.median, 1)"
@@ -58,6 +61,8 @@
 
         <AimMetric
           label="垂直偏移"
+          metric="crosshairPlacement"
+          note="这里是带符号的垂直分量：正数 = 准星在头上方，负数 = 在头下方。"
           :help="`${AIM_HELP.crosshair}
 这里是带符号的垂直分量：正数 = 准星在头上方，负数 = 在头下方。`"
           :value="fmtSigned(o.crosshairV.median)"
@@ -72,6 +77,8 @@
 
         <AimMetric
           label="水平偏移"
+          metric="crosshairPlacement"
+          note="这里是水平分量的绝对值（左右偏了多少）。"
           :help="`${AIM_HELP.crosshair}
 这里是水平分量的绝对值（左右偏了多少）。`"
           help-align="right"
@@ -90,6 +97,7 @@
       <div class="as-grid as-grid-rates">
         <AimMetric
           label="急停率"
+          metric="counterStrafe"
           :help="AIM_HELP.counterStrafe"
           :value="fmtPct(o.counterStrafeRate)"
           unit="%"
@@ -98,6 +106,7 @@
         />
         <AimMetric
           label="可见时命中率"
+          metric="accuracySpotted"
           :help="AIM_HELP.visibleAccuracy"
           :value="fmtPct(o.visibleAccuracy)"
           unit="%"
@@ -107,6 +116,7 @@
         />
         <AimMetric
           label="首发命中率"
+          metric="firstBulletAccuracy"
           :help="AIM_HELP.firstShot"
           :value="fmtPct(o.firstShotAccuracy)"
           unit="%"
@@ -116,6 +126,7 @@
         />
         <AimMetric
           label="爆头率"
+          metric="headAccuracy"
           :help="AIM_HELP.headshot"
           :value="fmtPct(o.headshotRate)"
           unit="%"
@@ -124,6 +135,7 @@
         />
         <AimMetric
           label="命中率"
+          metric="accuracy"
           :help="AIM_HELP.accuracy"
           :value="fmtPct(o.accuracy)"
           unit="%"
@@ -132,6 +144,7 @@
         />
         <AimMetric
           label="压枪控制"
+          metric="sprayControl"
           :help="AIM_HELP.sprayControl"
           help-align="right"
           :value="fmtNum(o.sprayControl)"

@@ -15,9 +15,6 @@ import { tauriInvoke } from './useTauri';
 /** 和 shared-types 的 SPRAY_WEAPONS 一致（shared-types 只做类型导入，没有运行时产物）。 */
 export const SPRAY_WEAPONS = ['ak47', 'm4a1', 'm4a1_silencer', 'galilar', 'famas', 'mp9', 'mac10'] as const;
 
-/** 没有「我关注的人」时的兜底 steamid。 */
-export const FALLBACK_STEAMID = '76561198000000042';
-
 /** 「开始崩」的阈值（°），和后端 `break_shot` 一致。 */
 export const BREAK_DEG = 2;
 
@@ -33,6 +30,7 @@ export function getSprays(steamid: string, opts: { matchId?: string | null; weap
   });
 }
 
+/** 「我关注的人」：枪法页选手下拉里的个人收藏（「我」本身来自 useMainPlayer）。 */
 export function listFollowedPersons() {
   return tauriInvoke<PersonSummaryDto[]>('search_persons', { followedOnly: true, limit: 50 });
 }

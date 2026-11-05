@@ -3,6 +3,7 @@
     <div class="stat-label">
       <span v-if="tone !== 'neutral'" class="stat-mark" />
       {{ label }}
+      <MetricHelp v-if="metric" :metric="metric" />
     </div>
     <div class="stat-value num">
       <slot>{{ value }}</slot>
@@ -22,6 +23,7 @@
  * 数据卡：一个指标一张卡。
  * - 数字本身始终是一级文字色，颜色只出现在标签前的小色块上，用来表明语义。
  * - delta 的好坏由 higherIsBetter 决定：变好用 success，变差用 danger。
+ * - 传 metric 时标签旁显示 <MetricHelp>。
  */
 const props = withDefaults(defineProps<{
   label: string;
@@ -32,6 +34,8 @@ const props = withDefaults(defineProps<{
   delta?: number | null;
   higherIsBetter?: boolean;
   compact?: boolean;
+  /** utils/metricGlossary.ts 里的指标 key：标签旁显示「?」说明 */
+  metric?: string;
 }>(), {
   value: '—',
   tone: 'neutral',

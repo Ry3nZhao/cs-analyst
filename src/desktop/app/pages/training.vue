@@ -209,6 +209,7 @@
             :tone="t.tone ?? 'neutral'"
             :delta="t.delta ?? null"
             :higher-is-better="t.higherIsBetter ?? true"
+            :metric="t.metric"
           />
         </div>
         <p v-if="!finish.pointerLock && meta.pointerLock" class="callout callout-warning result-note">
@@ -461,7 +462,17 @@ function fmtScore(v: number | null, m: TrainingModeMeta) {
 }
 
 // ── 结果页 ──
-interface Tile { label: string; value: number | string | null; unit?: string; hint?: string; tone?: 'neutral' | 'accent'; delta?: number | null; higherIsBetter?: boolean }
+interface Tile { label: string; value: number | string | null; unit?: string; hint?: string; tone?: 'neutral' | 'accent'; delta?: number | null; higherIsBetter?: boolean; /** 指标释义 key（utils/metricGlossary.ts） */ metric?: string }
+
+/** 各模式主成绩对应的释义 key */
+const MAIN_METRIC: Record<TrainingMode, string> = {
+  reaction: 'trainingReaction',
+  flick: 'flickHitRate',
+  tracking: 'trackingOnTarget',
+  micro: 'microAccuracy',
+  strafe: 'strafeSuccess',
+  spray: 'sprayControl',
+};
 
 /** 和上一次（不含本次）的主成绩比较 */
 const prevScore = computed(() => {
@@ -476,7 +487,7 @@ const tiles = computed<Tile[]>(() => {
   if (!f || !m) return [];
   const x = f.result.metrics;
   const delta = f.result.score != null && prevScore.value != null ? Math.round((f.result.score - prevScore.value) * 10) / 10 : null;
-  const main: Tile = { label: m.scoreLabel, value: f.result.score, unit: m.scoreUnit, tone: 'accent', delta, higherIsBetter: m.higherIsBetter, hint: delta != null ? '对比上次' : undefined };
+  const main: Tile = { label: m.scoreLabel, value: f.result.score, unit: m.scoreUnit, tone: 'accent', delta, higherIsBetter: m.higherIsBetter, hint: delta != null ? '对比上次' : undefined, metric: MAIN_METRIC[mode.value] };
   switch (mode.value) {
     case 'reaction':
       return [main, { label: '平均', value: x.mean, unit: 'ms' }, { label: '最好', value: x.best, unit: 'ms' }, { label: '犯规', value: x.fouls, unit: '次' }];
@@ -487,9 +498,9 @@ const tiles = computed<Tile[]>(() => {
     case 'tracking':
       return [main, { label: '平均偏离', value: x.avgErrDeg, unit: '°', hint: '准星到目标中心' }];
     case 'strafe':
-      return [main, { label: '平均时机', value: x.avgTiming, unit: 'ms', hint: '进入阈值到开枪' }, { label: '开枪时平均速度', value: x.avgSpeed, unit: 'u/s', hint: `阈值 ${x.threshold}` }, { label: '有效开枪', value: x.shots, unit: '枪' }];
+      return [main, { label: '平均时机', value: x.avgTiming, unit: 'ms', hint: '进入阈值到开枪', metric: 'strafeTiming' }, { label: '开枪时平均速度', value: x.avgSpeed, unit: 'u/s', hint: `阈值 ${x.threshold}` }, { label: '有效开枪', value: x.shots, unit: '枪' }];
     case 'spray':
-      return [main, { label: '平均误差', value: x.meanErr, unit: '°', hint: '第 2 发起' }, { label: '开始偏出', value: x.breakShot == null ? '无' : `第 ${x.breakShot} 发`, hint: '误差 > 2°（中位数）' }, { label: '全程稳住', value: `${x.unbroken} / ${x.sprays}`, hint: '误差始终 ≤ 2° 的连发' }];
+      return [main, { label: '平均误差', value: x.meanErr, unit: '°', hint: '第 2 发起', metric: 'sprayError' }, { label: '开始偏出', value: x.breakShot == null ? '无' : `第 ${x.breakShot} 发`, hint: '误差 > 2°（中位数）', metric: 'breakShot' }, { label: '全程稳住', value: `${x.unbroken} / ${x.sprays}`, hint: '误差始终 ≤ 2° 的连发' }];
   }
   return [main];
 });
