@@ -269,3 +269,4 @@ export interface ValveBotConfigUpdateDto {
   cronSchedule?: string;
   runOnStartup?: boolean;
 }
+export * from './stats.js';

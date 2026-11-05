@@ -3,6 +3,7 @@ mod commands;
 mod database;
 mod orchestrator;
 mod sidecar;
+mod stats;
 
 use analysis::AnalysisQueue;
 use database::{repo, resolve_data_root, Database};
@@ -34,6 +35,7 @@ pub fn run() {
             let sidecar = Arc::new(SidecarManager::new(script));
             let analysis = AnalysisQueue::new(db.clone());
             analysis.start(app.handle().clone());
+            stats::spawn_backfill(db.clone());
             let orchestrator = Arc::new(DownloadOrchestrator::new(db.clone(), sidecar.clone(), analysis.clone()));
             orchestrator.wire_sidecar_events(app.handle().clone());
             let _ = sidecar.start();
@@ -115,6 +117,8 @@ pub fn run() {
             commands::force_download_now,
             commands::reanalyze_matches,
             commands::get_analysis_status,
+            crate::stats::commands::get_match_detail,
+            crate::stats::commands::list_player_stats,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

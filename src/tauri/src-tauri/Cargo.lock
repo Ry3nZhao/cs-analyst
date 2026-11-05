@@ -490,6 +490,7 @@ dependencies = [
  "rusqlite",
  "serde",
  "serde_json",
+ "stats",
  "tauri",
  "tauri-build",
  "tauri-plugin-dialog",
@@ -3315,6 +3316,17 @@ name = "stable_deref_trait"
 version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6ce2be8dc25455e1f91df71bfa12ad37d7af1092ae736f3a6cd0e37bc7810596"
+
+[[package]]
+name = "stats"
+version = "0.1.0"
+dependencies = [
+ "ahash",
+ "demo-parse",
+ "parser",
+ "serde",
+ "serde_json",
+]
 
 [[package]]
 name = "string_cache"

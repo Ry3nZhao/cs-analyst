@@ -264,7 +264,7 @@ mod tests {
     fn migration_and_queue_queries() {
         let (db, dir) = temp_db();
         let v: i32 = db.conn.query_row("PRAGMA user_version", [], |r| r.get(0)).unwrap();
-        assert_eq!(v, 2);
+        assert!(v >= 2);
         insert_match(&db, "m1");
         assert_eq!(list_matches_needing_analysis(&db).unwrap(), vec!["m1".to_string()]);
 

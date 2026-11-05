@@ -1,0 +1,16 @@
+[package]
+name = "stats"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "Per-match derived stats (K/D/A, ADR, KAST, HLTV 2.0, trades, clutches, utility, economy) from parsed demo events"
+
+[dependencies]
+demo-parse = { path = "../demo-parse" }
+serde = { version = "1", features = ["derive"] }
+
+[dev-dependencies]
+# Tests read the in-game scoreboard (ActionTrackingServices) straight from the demo to cross-check.
+parser = { path = "../../vendor/demoparser/parser" }
+ahash = "0.8.3"
+serde_json = "1"
