@@ -47,6 +47,7 @@ const COMMANDS: &[&str] = &[
     "get_downloader_status",
     "restart_downloader",
     "get_downloader_logs",
+    "get_replay", "get_heatmap_points", "get_radar", "get_radar_image", "get_radar_settings", "update_radar_settings",
 ];
 
 fn main() {

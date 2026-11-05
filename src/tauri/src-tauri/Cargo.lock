@@ -496,6 +496,7 @@ dependencies = [
  "dirs",
  "open",
  "parking_lot",
+ "png 0.17.16",
  "rusqlite",
  "serde",
  "serde_json",

@@ -4,6 +4,7 @@ mod commands;
 mod database;
 mod identity;
 mod orchestrator;
+mod replay;
 mod sidecar;
 mod stats;
 
@@ -146,6 +147,7 @@ pub fn run() {
             sidecar::commands::get_downloader_status,
             sidecar::commands::restart_downloader,
             sidecar::commands::get_downloader_logs,
+            replay::commands::get_replay, replay::commands::get_heatmap_points, replay::commands::get_radar, replay::commands::get_radar_image, replay::commands::get_radar_settings, replay::commands::update_radar_settings,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -44,6 +44,7 @@ permissions = [
   "allow-get-downloader-status",
   "allow-restart-downloader",
   "allow-get-downloader-logs",
+  "allow-get-replay", "allow-get-heatmap-points", "allow-get-radar", "allow-get-radar-image", "allow-get-radar-settings", "allow-update-radar-settings",
   "allow-import-demos",
   "allow-refresh-match-metadata",
   "allow-force-download-now",
