@@ -76,8 +76,18 @@ SQLite 单文件数据库，迁移文件在 `migrations/sqlite/`，通过 `PRAGM
 | 001 | `users` / `sub_accounts`（用户与子账号）、`matches`（发现 + 下载 + 文件头元数据）、`sync_cursors`、`app_settings` / `platform_settings` / `valve_bot_config` |
 | 002 | `matches.analysis_*`（解析状态）、`match_players`、`rounds`、`kills`、`damages`、`shots`、`grenades`、`blinds`、`bomb_events`、`purchases`、`economies` |
 | 003 | `player_match_stats`、`player_round_stats`、`team_round_stats`（派生指标，口径见 [stats.md](stats.md)） |
+| 009 | `matches.favorite` / `demo_storage` / `demo_original_size` / `demo_storage_at`、`storage_settings`（存储策略与清理规则） |
 
 约定：SteamID 存为 INTEGER（Steam64）；队伍编号 2 = T、3 = CT；所有解析表都随对局级联删除。
+
+## 存储与备份（`src/storage/`）
+
+- **原始 demo 策略**：解析成功后保留 / 压缩为 `.dem.zst` / 删除只留数据。`demo_parse::parse_demo_file` 按 zstd 魔数自动识别压缩文件，重新解析无需额外处理。
+- **安全条件**：只处理数据目录 `demos/` 下的文件；压缩前要求当前解析器版本的结果已入库，删除还要求基础指标和枪法分析已入库、且对局未收藏。压缩先写临时文件并完整解压比对，一致后才替换原文件。
+- **清理**：按天数或总容量删除原始 demo（收藏永不清理）。批量操作先预览，执行时只接受预览下发的一次性令牌。
+- **备份**：用独立只读连接 `VACUUM INTO` 生成一致快照，放在 `backups/<时间>/`，可附带回放文件。**不要直接复制 `analyst.db` 和 `-wal` / `-shm`**：WAL 模式下主文件本身不是一致快照，主文件与过期或不匹配的 WAL 文件配对会丢数据。
+- **恢复**：先自动备份当前库（`*-pre-restore`），再用 SQLite 在线备份 API 把快照写进正在使用的连接，旧版本备份恢复后自动补跑迁移。
+- **开发**：环境变量 `CS_ANALYST_DATA_ROOT` 可把数据目录指向一份副本，测试时不动真实数据。
 
 ## 平台适配器
 

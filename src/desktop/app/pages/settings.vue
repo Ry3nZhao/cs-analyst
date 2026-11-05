@@ -17,6 +17,9 @@
       </div>
     </div>
 
+    <!-- 存储与备份（W3-D） -->
+    <StorageBackupSection />
+
     <!-- Scheduling -->
     <div class="card card-pad">
       <div class="card-title">调度设置</div>

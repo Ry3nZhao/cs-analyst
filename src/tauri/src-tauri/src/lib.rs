@@ -6,6 +6,7 @@ mod identity;
 mod orchestrator;
 mod sidecar;
 mod stats;
+mod storage;
 
 use analysis::AnalysisQueue;
 use database::{repo, resolve_data_root, Database};
@@ -40,6 +41,7 @@ pub fn run() {
             analysis.start(app.handle().clone());
             stats::spawn_backfill(db.clone());
             aim::start_backfill(db.clone());
+            storage::init(db.clone());
             let orchestrator = Arc::new(DownloadOrchestrator::new(db.clone(), sidecar.clone(), analysis.clone()));
             orchestrator.wire_sidecar_events(app.handle().clone());
             let _ = sidecar.start();
@@ -134,6 +136,18 @@ pub fn run() {
             identity::commands::rebuild_head_to_head,
             aim::commands::get_aim_stats,
             aim::commands::get_sprays,
+            storage::commands::get_storage_settings,
+            storage::commands::update_storage_settings,
+            storage::commands::get_storage_usage,
+            storage::commands::list_match_storage,
+            storage::commands::set_match_favorite,
+            storage::commands::preview_storage_plan,
+            storage::commands::apply_storage_plan,
+            storage::commands::export_matches,
+            storage::commands::create_backup,
+            storage::commands::list_backups,
+            storage::commands::restore_backup,
+            storage::commands::inspect_backup,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

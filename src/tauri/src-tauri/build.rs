@@ -43,6 +43,18 @@ const COMMANDS: &[&str] = &[
     "rebuild_head_to_head",
     "get_aim_stats",
     "get_sprays",
+    "get_storage_settings",
+    "update_storage_settings",
+    "get_storage_usage",
+    "list_match_storage",
+    "set_match_favorite",
+    "preview_storage_plan",
+    "apply_storage_plan",
+    "export_matches",
+    "create_backup",
+    "list_backups",
+    "restore_backup",
+    "inspect_backup",
 ];
 
 fn main() {
