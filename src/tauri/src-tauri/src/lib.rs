@@ -4,6 +4,7 @@ mod commands;
 mod database;
 mod identity;
 mod orchestrator;
+mod replay;
 mod sidecar;
 mod stats;
 
@@ -134,6 +135,7 @@ pub fn run() {
             identity::commands::rebuild_head_to_head,
             aim::commands::get_aim_stats,
             aim::commands::get_sprays,
+            replay::commands::get_replay, replay::commands::get_heatmap_points, replay::commands::get_radar, replay::commands::get_radar_image, replay::commands::get_radar_settings, replay::commands::update_radar_settings,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

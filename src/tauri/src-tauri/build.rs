@@ -43,6 +43,7 @@ const COMMANDS: &[&str] = &[
     "rebuild_head_to_head",
     "get_aim_stats",
     "get_sprays",
+    "get_replay", "get_heatmap_points", "get_radar", "get_radar_image", "get_radar_settings", "update_radar_settings",
 ];
 
 fn main() {
