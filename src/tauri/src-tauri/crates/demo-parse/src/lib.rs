@@ -13,14 +13,15 @@ pub mod engagement;
 pub mod header;
 pub mod model;
 pub mod replay;
+pub mod source;
 
 pub use header::{read_demo_file_meta, DemoFileMeta};
 pub use engagement::{parse_engagements_bytes, parse_engagements_file, EngagementOptions, Engagements};
 pub use model::*;
 pub use replay::Replay;
+pub use source::{is_zstd_file, parse_demo_zst, read_demo, DemoBytes};
 
 use ahash::{AHashMap, AHashSet};
-use memmap2::MmapOptions;
 use parser::first_pass::parser_settings::{rm_user_friendly_names, ParserInputs};
 use parser::first_pass::prop_controller::{NAME_ID, STEAMID_ID, TICK_ID};
 use parser::parse_demo::{DemoOutput, Parser, ParsingMode};
@@ -75,11 +76,10 @@ const TICK_PROPS: &[&str] = &[
     "CCSPlayerController.m_iCompetitiveRankType",
 ];
 
+/// Parse a `.dem`, or a zstd-compressed `.dem.zst` (detected by magic bytes).
 pub fn parse_demo_file(path: &Path) -> Result<ParsedDemo, ParseError> {
-    let file = std::fs::File::open(path)?;
-    // SAFETY: the file is opened read-only and not modified while mapped.
-    let mmap = unsafe { MmapOptions::new().map(&file)? };
-    parse_demo_bytes(&mmap)
+    let bytes = source::read_demo(path)?;
+    parse_demo_bytes(&bytes)
 }
 
 pub fn parse_demo_bytes(bytes: &[u8]) -> Result<ParsedDemo, ParseError> {

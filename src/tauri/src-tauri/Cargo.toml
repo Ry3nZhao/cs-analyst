@@ -23,7 +23,7 @@ tauri-plugin-shell = "2"
 tauri-plugin-dialog = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-rusqlite = { version = "0.32", features = ["bundled"] }
+rusqlite = { version = "0.32", features = ["bundled", "backup"] }
 uuid = { version = "1", features = ["v4"] }
 chrono = { version = "0.4", features = ["serde"] }
 thiserror = "2"
@@ -31,6 +31,7 @@ parking_lot = "0.12"
 tokio = { version = "1", features = ["full"] }
 dirs = "6"
 open = "5"
+zstd = "0.13"
 demo-parse = { path = "crates/demo-parse" }
 stats = { path = "crates/stats" }
 aim = { path = "crates/aim" }

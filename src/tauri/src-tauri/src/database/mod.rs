@@ -30,6 +30,7 @@ const MIGRATIONS: &[(&str, i32)] = &[
     (include_str!("../../../../../migrations/sqlite/006_swing.sql"), 6),
     (include_str!("../../../../../migrations/sqlite/007_training.sql"), 7),
     (include_str!("../../../../../migrations/sqlite/008_onboarding.sql"), 8),
+    (include_str!("../../../../../migrations/sqlite/009_storage.sql"), 9),
 ];
 
 pub struct Database {
@@ -122,7 +123,7 @@ impl Database {
         Ok(())
     }
 
-    fn migrate(&self) -> Result<()> {
+    pub(crate) fn migrate(&self) -> Result<()> {
         let version: i32 = self.conn.query_row("PRAGMA user_version", [], |r| r.get(0))?;
 
         for (sql, target_version) in MIGRATIONS {
@@ -169,6 +170,10 @@ impl Database {
 }
 
 pub fn resolve_data_root(app: &tauri::AppHandle) -> PathBuf {
+    // 开发 / 测试用：指向一份数据副本，避免动到真实数据
+    if let Some(p) = std::env::var_os("CS_ANALYST_DATA_ROOT").filter(|p| !p.is_empty()) {
+        return PathBuf::from(p);
+    }
     app.path()
         .app_local_data_dir()
         .unwrap_or_else(|_| PathBuf::from("."))

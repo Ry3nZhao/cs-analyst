@@ -7,7 +7,6 @@
 
 use super::{run_parser, Ev, ParseError, Timeline, TickTable, Vec3};
 use ahash::{AHashMap, AHashSet};
-use memmap2::MmapOptions;
 use parser::second_pass::parser_settings::create_huffman_lookup_table;
 use serde::Serialize;
 use std::path::Path;
@@ -138,10 +137,9 @@ const WINDOW_EVENTS: &[&str] = &[
 ];
 
 pub fn parse_engagements_file(path: &Path, opts: EngagementOptions) -> Result<Engagements, ParseError> {
-    let file = std::fs::File::open(path)?;
-    // SAFETY: the file is opened read-only and not modified while mapped.
-    let mmap = unsafe { MmapOptions::new().map(&file)? };
-    parse_engagements_bytes(&mmap, opts)
+    // `.dem` or zstd-compressed `.dem.zst`
+    let bytes = crate::source::read_demo(path)?;
+    parse_engagements_bytes(&bytes, opts)
 }
 
 pub fn parse_engagements_bytes(bytes: &[u8], opts: EngagementOptions) -> Result<Engagements, ParseError> {

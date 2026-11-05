@@ -19,6 +19,8 @@
 
     <!-- W3-C 主玩家 / 监听目录 / 通知 / 托盘 -->
     <SettingsExperience />
+    <!-- 存储与备份（W3-D） -->
+    <StorageBackupSection />
 
     <!-- Scheduling -->
     <div class="card card-pad">

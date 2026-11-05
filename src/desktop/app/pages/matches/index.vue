@@ -81,6 +81,7 @@
       <table class="data-table">
         <thead>
           <tr>
+            <th class="fav-col" title="收藏的对局不会被自动清理"></th>
             <th
               v-for="col in visibleColumns"
               :key="col.key"
@@ -99,6 +100,15 @@
             :class="{ selected: drawerOpen && selected?.id === job.id }"
             @click="openDetail(job)"
           >
+            <td class="fav-col" @click.stop>
+              <button
+                class="fav-btn"
+                :class="{ on: isFavorite(job.id) }"
+                :title="isFavorite(job.id) ? '取消收藏' : '收藏（不会被自动清理）'"
+                :aria-label="isFavorite(job.id) ? '取消收藏' : '收藏'"
+                @click="toggleFavorite(job.id)"
+              >{{ isFavorite(job.id) ? '★' : '☆' }}</button>
+            </td>
             <td
               v-for="col in visibleColumns"
               :key="col.key"
@@ -157,7 +167,7 @@
             </td>
           </tr>
           <tr v-if="visibleJobs.length === 0">
-            <td :colspan="visibleColumns.length + 1" class="empty">暂无对局记录</td>
+            <td :colspan="visibleColumns.length + 2" class="empty">暂无对局记录</td>
           </tr>
         </tbody>
       </table>
@@ -209,6 +219,7 @@ definePageMeta({ layout: 'default' });
 const { status, toggleQueue, discoverNow } = useAppStatus();
 const toast = useToast();
 const { visibleKeys, visibleColumns, toggleColumn, resetColumns, MATCH_COLUMNS } = useMatchColumns();
+const { isFavorite, toggleFavorite } = useMatchStorage();
 
 const jobs = ref<MatchDto[]>([]);
 const filterPlatform = ref('');
@@ -496,6 +507,11 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* 收藏（W3-D） */
+.fav-col { width: 28px; padding-right: 0 !important; }
+.fav-btn { width: 22px; height: 22px; border: 0; background: none; cursor: pointer; color: var(--text-disabled); font-size: var(--text-md); line-height: 1; border-radius: var(--radius-sm); }
+.fav-btn:hover { color: var(--text-2); background: var(--surface-hover); }
+.fav-btn.on { color: var(--text); }
 .matches-page { display: flex; flex-direction: column; gap: var(--space-4); height: 100%; }
 
 .stats-row { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--space-3); }
