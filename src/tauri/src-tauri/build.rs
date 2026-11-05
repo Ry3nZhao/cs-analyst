@@ -43,6 +43,17 @@ const COMMANDS: &[&str] = &[
     "rebuild_head_to_head",
     "get_aim_stats",
     "get_sprays",
+    "get_main_player",
+    "set_main_player",
+    "list_main_player_candidates",
+    "get_onboarding_state",
+    "complete_onboarding",
+    "set_data_root",
+    "get_experience_settings",
+    "update_experience_settings",
+    "get_watch_status",
+    "detect_replays_dir",
+    "send_test_notification",
 ];
 
 fn main() {

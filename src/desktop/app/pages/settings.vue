@@ -17,6 +17,9 @@
       </div>
     </div>
 
+    <!-- W3-C 主玩家 / 监听目录 / 通知 / 托盘 -->
+    <SettingsExperience />
+
     <!-- Scheduling -->
     <div class="card card-pad">
       <div class="card-title">调度设置</div>

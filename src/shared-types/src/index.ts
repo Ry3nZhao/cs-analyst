@@ -272,3 +272,4 @@ export interface ValveBotConfigUpdateDto {
 export * from './stats.js';
 export * from './identity.js';
 export * from './aim.js';
+export * from './onboarding.js';

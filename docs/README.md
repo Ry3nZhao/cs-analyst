@@ -12,3 +12,4 @@
 | [architecture.md](architecture.md) | 仓库结构、模块职责、平台适配器 |
 | [roadmap.md](roadmap.md) | 对标 Leetify 的分析能力路线图 |
 | [stats.md](stats.md) | 基础指标口径（K/D/A、KAST、补枪、残局、道具、经济） |
+| [onboarding.md](onboarding.md) | 上手体验：主玩家、首次启动向导、托盘、通知、监听 CS2 录像目录、指标说明组件 |
