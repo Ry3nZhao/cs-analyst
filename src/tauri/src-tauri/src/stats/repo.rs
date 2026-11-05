@@ -3,12 +3,13 @@
 use crate::database::{Database, Result};
 use demo_parse::{BombEvent, Blind, Damage, Economy, Grenade, Kill, Player, Purchase, Round};
 use rusqlite::{params, Connection, OptionalExtension, Row};
-use stats::{MatchEvents, MatchStats, PlayerMatchStats, Team, STATS_VERSION};
+use stats::{BucketSample, MatchEvents, MatchStats, PlayerMatchStats, Team, WinModel, STATS_VERSION};
 
 /// SourceTV tick rate; not stored in the database (demo-parse always reports 64).
 pub const DEFAULT_TICK_RATE: f32 = 64.0;
 
-const STATS_TABLES: &[&str] = &["player_match_stats", "player_round_stats", "team_round_stats"];
+const STATS_TABLES: &[&str] =
+    &["player_match_stats", "player_round_stats", "team_round_stats", "round_win_probability", "win_prob_samples"];
 
 fn sid(v: u64) -> i64 {
     v as i64
@@ -310,6 +311,8 @@ fn write_stats(c: &Connection, m: &str, s: &MatchStats) -> rusqlite::Result<()> 
             &d.kast,
             &d.hs_pct,
             &d.rating,
+            &p.swing_total,
+            &d.swing,
         ]))?;
     }
 
@@ -317,8 +320,8 @@ fn write_stats(c: &Connection, m: &str, s: &MatchStats) -> rusqlite::Result<()> 
         "INSERT INTO player_round_stats (match_id, round, steamid, team, side, kills, died, death_tick, assists,
            flash_assists, headshot_kills, damage, utility_damage, kast, traded, trade_kills, opening_kill,
            opening_death, clutch_vs, clutch_won, mvp, equip_value, balance, utility_thrown, enemies_flashed,
-           unused_utility_value)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+           unused_utility_value, swing)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
     )?;
     for r in &s.player_rounds {
         st.execute(params![
@@ -347,7 +350,8 @@ fn write_stats(c: &Connection, m: &str, s: &MatchStats) -> rusqlite::Result<()> 
             r.balance,
             r.utility_thrown,
             r.enemies_flashed,
-            r.unused_utility_value
+            r.unused_utility_value,
+            r.swing
         ])?;
     }
 
@@ -370,7 +374,66 @@ fn write_stats(c: &Connection, m: &str, s: &MatchStats) -> rusqlite::Result<()> 
             t.survivors
         ])?;
     }
+
+    let mut st = c.prepare(
+        "INSERT INTO round_win_probability (match_id, round, seq, tick, time_secs, kind, player, victim, t_alive,
+           ct_alive, bomb_planted, p_before, p_after)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    )?;
+    for r in &s.win_probability {
+        for (i, p) in r.points.iter().enumerate() {
+            st.execute(params![
+                m,
+                r.round,
+                i as i64,
+                p.tick,
+                p.time_secs,
+                p.kind,
+                p.player.map(sid),
+                p.victim.map(sid),
+                p.t_alive,
+                p.ct_alive,
+                p.bomb_planted,
+                p.p_before,
+                p.p_after
+            ])?;
+        }
+    }
+
+    let mut st = c.prepare(
+        "INSERT INTO win_prob_samples (match_id, t_alive, ct_alive, planted, rounds, t_wins) VALUES (?, ?, ?, ?, ?, ?)",
+    )?;
+    for b in &s.swing_samples {
+        st.execute(params![m, b.t_alive, b.ct_alive, b.planted, b.rounds, b.t_wins])?;
+    }
     Ok(())
+}
+
+/// Swing model for this library: the built-in prior, smoothed with the bucket samples of every
+/// match that has them (see `stats::swing`).
+pub fn load_win_model(db: &Database) -> Result<WinModel> {
+    let mut st = db.conn.prepare(
+        "SELECT t_alive, ct_alive, planted, SUM(rounds), SUM(t_wins) FROM win_prob_samples
+         GROUP BY t_alive, ct_alive, planted",
+    )?;
+    let samples = st
+        .query_map([], |r| {
+            Ok(BucketSample {
+                t_alive: r.get(0)?,
+                ct_alive: r.get(1)?,
+                planted: r.get(2)?,
+                rounds: r.get::<_, i64>(3)?.max(0) as u32,
+                t_wins: r.get::<_, i64>(4)?.max(0) as u32,
+            })
+        })?
+        .collect::<rusqlite::Result<Vec<_>>>()?;
+    let rounds: i64 = db.conn.query_row(
+        "SELECT COUNT(*) FROM team_round_stats
+         WHERE team = 'A' AND match_id IN (SELECT DISTINCT match_id FROM win_prob_samples)",
+        [],
+        |r| r.get(0),
+    )?;
+    Ok(WinModel::with_local(samples, rounds.max(0) as u32))
 }
 
 /// Column list of `player_match_stats`, in insert / select order.
@@ -382,7 +445,7 @@ const PMS_COLUMNS: &str = "match_id, steamid, stats_version, name, team, start_s
   clutch_1v4_attempts, clutch_1v4_wins, clutch_1v5_attempts, clutch_1v5_wins, clutch_kills,
   flashes_thrown, he_thrown, smokes_thrown, molotovs_thrown, decoys_thrown, enemies_flashed, enemy_blind_seconds,
   teammates_flashed, teammate_blind_seconds, he_damage, he_team_damage, fire_damage, unused_utility_value,
-  adr, kast, hs_pct, rating";
+  adr, kast, hs_pct, rating, swing_total, swing";
 
 /// Columns selected by [`row_to_player_stats`] (prefix with a table alias via `pms_select`).
 pub fn pms_select(alias: &str) -> String {
@@ -454,6 +517,7 @@ pub fn row_to_player_stats(r: &Row, o: usize) -> rusqlite::Result<PlayerMatchSta
         he_team_damage: g(55)?,
         fire_damage: g(56)?,
         unused_utility_value: g(57)?,
+        swing_total: r.get::<_, Option<f64>>(o + 62)?.unwrap_or(0.0) as f32,
         derived: Default::default(),
     };
     p.finalize();

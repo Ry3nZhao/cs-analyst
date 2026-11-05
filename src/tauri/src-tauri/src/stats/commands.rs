@@ -4,8 +4,8 @@ use super::repo;
 use crate::database::{Database, Result};
 use crate::AppState;
 use ::stats::{
-    opt_steamid_str, steamid_str, KillEvent, MatchStats, PlayerMatchStats, PlayerRoundStats, Team, TeamRoundStats,
-    STATS_VERSION,
+    opt_steamid_str, steamid_str, KillEvent, MatchStats, PlayerMatchStats, PlayerRoundStats, RoundWinProbability, Team,
+    TeamRoundStats, WinModel, STATS_VERSION,
 };
 use rusqlite::{params, params_from_iter, OptionalExtension};
 use serde::{Deserialize, Serialize};
@@ -132,23 +132,82 @@ pub struct PlayerMatchRow {
     pub stats: PlayerMatchStats,
 }
 
-fn build_detail(db: &Database, match_id: &str) -> Result<Option<MatchDetail>> {
-    let meta: Option<(String, Option<String>, Option<String>)> = db
+/// T win-probability curves of every round plus each player's per-round Swing.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MatchWinProbability {
+    pub match_id: String,
+    pub stats_version: i32,
+    pub tick_rate: f32,
+    pub model: WinModelInfo,
+    pub rounds: Vec<RoundWinProbability>,
+    pub player_rounds: Vec<PlayerRoundSwing>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WinModelInfo {
+    /// Rounds in the local library behind the bucket samples.
+    pub local_rounds: u32,
+    /// False while the library is below `swing::LOCAL_MIN_ROUNDS` (prior table only).
+    pub uses_local_data: bool,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PlayerRoundSwing {
+    pub round: u32,
+    #[serde(with = "steamid_str")]
+    pub steamid: u64,
+    pub team: Team,
+    pub side: u8,
+    /// Percentage points of round win probability.
+    pub swing: f32,
+}
+
+type MatchMeta = (String, Option<String>, Option<String>);
+
+/// Compute a match's stats from its stored events with the library's Swing model. Writes the
+/// result back when the stored rows are missing or from an older `STATS_VERSION`.
+fn compute_live(db: &Database, match_id: &str) -> Result<Option<(MatchMeta, MatchStats, WinModel)>> {
+    let meta: Option<MatchMeta> = db
         .conn
         .query_row("SELECT platform, map_name, played_at FROM matches WHERE id = ?", params![match_id], |r| {
             Ok((r.get(0)?, r.get(1)?, r.get(2)?))
         })
         .optional()?;
-    let Some((platform, map_name, played_at)) = meta else { return Ok(None) };
+    let Some(meta) = meta else { return Ok(None) };
     let ev = repo::load_events(db, match_id)?;
     if ev.rounds.is_empty() {
         return Ok(None);
     }
-    let s: MatchStats = ::stats::compute(ev.view());
+    let model = repo::load_win_model(db)?;
+    let s: MatchStats = ::stats::compute_with_model(ev.view(), &model);
     // Self-heal: keep the stored rows in sync with what we just computed.
     if repo::stored_version(db, match_id)? != Some(STATS_VERSION) {
         repo::replace_match_stats(db, match_id, &s)?;
     }
+    Ok(Some((meta, s, model)))
+}
+
+fn build_win_probability(db: &Database, match_id: &str) -> Result<Option<MatchWinProbability>> {
+    let Some((_, s, model)) = compute_live(db, match_id)? else { return Ok(None) };
+    Ok(Some(MatchWinProbability {
+        match_id: match_id.to_string(),
+        stats_version: s.version,
+        tick_rate: repo::DEFAULT_TICK_RATE,
+        model: WinModelInfo { local_rounds: model.local_rounds, uses_local_data: model.uses_local() },
+        player_rounds: s
+            .player_rounds
+            .iter()
+            .map(|r| PlayerRoundSwing { round: r.round, steamid: r.steamid, team: r.team, side: r.side, swing: r.swing })
+            .collect(),
+        rounds: s.win_probability,
+    }))
+}
+
+fn build_detail(db: &Database, match_id: &str) -> Result<Option<MatchDetail>> {
+    let Some(((platform, map_name, played_at), s, _)) = compute_live(db, match_id)? else { return Ok(None) };
 
     let start_side_a = s.rounds.first().map(|r| r.side_a).unwrap_or(::stats::TEAM_CT);
     let teams = [Team::A, Team::B]
@@ -319,6 +378,20 @@ pub fn list_player_stats(
 ) -> std::result::Result<PlayerStatsList, String> {
     let sid: u64 = steamid.trim().parse().map_err(|_| "无效的 SteamID".to_string())?;
     list_player_stats_impl(&state.db.lock(), sid, &filters.unwrap_or_default()).map_err(|e| e.to_string())
+}
+
+/// Per-round T win-probability curves (Swing model) and per-player per-round Swing.
+#[tauri::command]
+pub fn get_round_win_probability(
+    state: State<'_, AppState>,
+    match_id: String,
+) -> std::result::Result<Option<MatchWinProbability>, String> {
+    build_win_probability(&state.db.lock(), &match_id).map_err(|e| e.to_string())
+}
+
+#[cfg(test)]
+pub(crate) fn build_win_probability_for_test(db: &Database, match_id: &str) -> Result<Option<MatchWinProbability>> {
+    build_win_probability(db, match_id)
 }
 
 #[cfg(test)]

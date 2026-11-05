@@ -2,15 +2,16 @@
 
 [← 文档目录](README.md) · [架构](architecture.md) · [路线图](roadmap.md)
 
-基础指标由 `crates/stats` 计算，这是一个纯函数 crate，输入一场比赛的事件，输出 `MatchStats`。`src/stats/` 负责入库和 Tauri 命令。
+基础指标和 [Swing](#swing回合胜率摆动) 由 `crates/stats` 计算，这是一个纯函数 crate，输入一场比赛的事件（Swing 另需一个胜率模型），输出 `MatchStats`。`src/stats/` 负责入库和 Tauri 命令。
 
 ## 数据流
 
 ```
 解析 worker：replace_match_analysis（002 事件表）
-        └─ stats::on_match_ingested → stats::compute(&ParsedDemo) → 003 三张表
+        └─ stats::on_match_ingested → load_win_model（006 样本表）→ compute_with_model → 003 / 006 表
 启动：stats::spawn_backfill → 已解析但没有统计、或 stats_version 过旧的对局 → 从 002 表读回事件 → 重算
-get_match_detail：从 002 表读事件 → 实时计算（单场只要几毫秒）→ 若库里版本不对，顺便回写
+get_match_detail / get_round_win_probability：从 002 表读事件 → 用当前胜率模型实时计算（单场只要几毫秒）
+        → 若库里版本不对，顺便回写
 list_player_stats：只读 player_match_stats
 ```
 
@@ -57,10 +58,109 @@ list_player_stats：只读 player_match_stats
 ## 表结构（迁移 003）
 
 - `player_match_stats`：主键 `(match_id, steamid)`，存上面全部计数，另存一份 `adr` / `kast` / `hs_pct` / `rating` 方便排序。`won` 取 1、0，或 `NULL`（平局）。`stats_version` 记录算法版本
-- `player_round_stats`：主键 `(match_id, round, steamid)`。存每人每回合的击杀、死亡 tick、伤害、KAST、补枪、开局对枪、残局、MVP、装备、余额、道具。第二波的 Swing 可以在后续迁移里往这张表加列
+- `player_round_stats`：主键 `(match_id, round, steamid)`。存每人每回合的击杀、死亡 tick、伤害、KAST、补枪、开局对枪、残局、MVP、装备、余额、道具。Swing 的列由迁移 006 加入，见上文
 - `team_round_stats`：主键 `(match_id, round, team)`。存阵营、胜负、赛后比分、装备、余额、经济类型、击杀数、存活人数
 
 三张表都随 `matches` 级联删除。
+
+## Swing（回合胜率摆动）
+
+参照 HLTV Rating 3.0 的 Round Swing：每个事件让本回合的胜率变了多少，就把这部分变化记到相关的人头上。**不做综合评分**，Swing 单独展示。代码在 `crates/stats/src/swing.rs`，所有常量都在文件开头。
+
+单位：**百分点**。`+3.2` 表示平均每回合让本方回合胜率提高 3.2%。
+
+### 胜率模型
+
+输出 T 方本回合胜率 `p`（CT = 1 − p）。状态包括：
+
+| 状态 | 来源 |
+|---|---|
+| 双方存活人数 | 击杀事件逐个扣减 |
+| 双方存活者平均血量 | 伤害事件的 `health_after` |
+| 双方存活者平均装备价值 | freeze end 经济快照 + 之后的购买（同 `equip_value`），回合内不变 |
+| 是否已下包、剩余时间 | 下包前：回合时间 115 秒减去已过时间；下包后：C4 40 秒减去已过时间 |
+| CT 存活者是否有拆弹器 | freeze end 经济快照的 `has_defuser` |
+
+计算步骤：
+
+1. **分段基准** `base(T 存活, CT 存活, 是否下包)`。
+   - 先验：把剩余的对局看成一连串 1v1 对决，每次对决淘汰一人，人多的一方赢下单次对决的概率为 `a / (a + b)`（Lanchester 线性律的粗略近似）。递推 `P(a, b) = a/(a+b)·P(a, b−1) + b/(a+b)·P(a−1, b)`，得到 5v4 ≈ 72%、2v1 ≈ 83%，与常见的「首杀方约 70–75% 赢下回合」一致。
+   - 阵营偏置（logit）：下包前 T −0.12，使 5v5 开局 T ≈ 47%（CS2 的 T 方回合胜率略低于一半）；下包后 T +0.85，使 5v5 下包后 T ≈ 70%。
+   - 本地平滑：本地库达到 200 个回合以后，每个分段按 `(100·先验 + 本地 T 胜回合数) / (100 + 本地经过该分段的回合数)` 平滑。也就是先验相当于 100 个回合的权重，本地样本越多越靠近本地实际胜率。样本只来自本地库（`win_prob_samples`），不联网。
+2. **logit 修正**：装备 `+0.5 × (T 均装备 − CT 均装备) / 1000`（限制在 ±2.5，全起打 ECO 时 ECO 方约 14%）；血量 `+1.0 × (T 均血量 − CT 均血量) / 100`。
+3. **时间和炸弹**：
+   - 下包前，剩余时间少于 20 秒时 T 胜率线性压到 0（超时 CT 胜）。
+   - 下包后 T 全灭：只看拆包时间够不够，`p = clamp(0.5 − (剩余 − 拆包时间) / 6, 0.02, 0.98)`，拆包时间有钳子 5 秒，没有 10 秒。
+   - 下包后双方都有人：CT 的胜率乘以 `clamp((剩余 − 拆包时间) / 10, 0, 1)`，时间不够回防就压到 0。
+   - 一方全灭：直接 0 或 1。拆包成功为 0，炸弹爆炸为 1。
+
+先验表（下包前 / 下包后，行 = T 存活，列 = CT 存活 1–5，未含装备、血量、时间修正）：
+
+```
+下包前   1    2    3    4    5        下包后   1    2    3    4    5
+T1     .47  .15  .04  .01  .00       T1     .70  .32  .09  .02  .00
+T2     .82  .47  .20  .07  .02       T2     .92  .70  .40  .17  .05
+T3     .95  .75  .47  .24  .10       T3     .98  .89  .70  .45  .23
+T4     .99  .91  .72  .47  .26       T4     1.0  .96  .87  .70  .48
+T5     1.0  .97  .87  .69  .47       T5     1.0  .99  .95  .85  .70
+```
+
+### 事件归因
+
+一个回合从 freeze end 开始，按 tick 顺序处理伤害、击杀、下包、拆包、爆炸事件，最后是回合结束。每个事件前后各算一次胜率，差值为 `Δ`。规则是**零和**的：得利一方的人分 `+Δ`，另一方的人分 `−Δ`。所以一个回合里 T 方所有人的 Swing 之和恰好等于 `结果 − 开局胜率`，胜方合计一定为正。开局胜率本身（经济优势）不算在任何人头上。
+
+| 事件 | 得利方 | 受损方 |
+|---|---|---|
+| 伤害（非致命） | 攻击者全拿 | 受伤者全扣 |
+| 击杀 | 闪光助攻者 15%；之前伤害过受害者的队友合计 `35% × min(1, 队友伤害 / 100)`，按伤害比例分；其余归击杀者 | 受害者扣 70%，其余由仍存活的队友平分；如果 5 秒内被补枪，受害者只扣 35%。受害者是最后一人时全扣 |
+| 误杀、误伤 | 对方存活者平分 | 动手的人全扣 |
+| 自杀、摔死等 | 对方存活者平分 | 死者全扣 |
+| 下包 | 下包者全拿 | CT 存活者平分 |
+| 拆包 | 拆包者全拿 | T 存活者平分 |
+| 爆炸 | 下包者全拿 | CT 存活者平分 |
+| 时间流逝 | 两个事件之间胜率随时间漂移的部分，由当时双方存活者平分 | |
+| 回合结束 | 收敛到 0 或 1 的剩余部分，由双方**全部**参与者平分（正常回合这部分很小；数值大多来自事件看不到的情况，例如掉线） | |
+
+「平分」时如果这一方没人存活，就由这一方本回合的全部参与者平分。致命伤害不单独算，交给击杀事件。
+
+比例常量：`FLASH_ASSIST_SHARE = 0.15`、`DAMAGE_ASSIST_MAX_SHARE = 0.35`、`DEATH_SHARE = 0.7`、`DEATH_SHARE_TRADED = 0.35`。
+
+### 特殊情况
+
+- **接管 bot**：平台 demo 里，有人掉线后他的位置由 bot 补上，已经阵亡的队友可以接管这个 bot 继续打。掉线者没有经济快照，不算参与者，所以接管者在已死亡的情况下再造成伤害时，模型把他重新算作存活（满血）。
+- **比赛结束后的事件**、回合结束后的补枪：不计入 Swing。
+- **平局回合**（没有胜方）：曲线没有 `end` 点，也不进入本地样本。
+
+### 入库（迁移 006）
+
+- `player_round_stats.swing`：每人每回合的 Swing。
+- `player_match_stats.swing_total`（各回合之和，可跨场相加）和 `swing`（`swing_total / rounds_played`）。
+- `round_win_probability`：主键 `(match_id, round, seq)`，每个事件一行：tick、距 freeze end 的秒数、事件类型、主角、受害者、事件后的双方存活人数、是否已下包、事件前后的 T 胜率。`seq = 0` 是 `start`，最后一行是 `end`。
+- `win_prob_samples`：主键 `(match_id, t_alive, ct_alive, planted)`。每场比赛的回合经过了哪些分段（每回合每个分段只计一次）、其中 T 赢了几回合。所有对局的样本加起来就是本地平滑的数据。
+
+都随 `matches` 级联删除。
+
+### 命令
+
+- `get_match_detail`：`scoreboard[].derived.swing`（整场平均）、`scoreboard[].swingTotal`、`playerRounds[].swing`。
+- `get_round_win_probability(matchId)`：每回合的胜率曲线（`rounds[].points`）、每人每回合的 Swing（`playerRounds`）和模型状态（`model.localRounds`、`model.usesLocalData`）。JSON 结构见 `src/shared-types/src/stats.ts` 的 `MatchWinProbabilityDto`。
+
+两个命令都用当前的本地模型实时计算。库里存的值是入库时的模型算出来的，本地样本变多以后，两者会有细微差别，参见下面的「已知限制」。
+
+### 已知限制
+
+- 本地样本增长后，旧对局入库的 Swing 不会自动用新模型重算，除非提升 `STATS_VERSION`。跨场汇总（`list_player_stats`）读的是入库值。
+- 装备价值是回合开始时的值，回合中捡枪、丢枪看不到。
+- 闪光致盲本身不改变胜率，只通过击杀里的闪光助攻分成体现。
+- 回合时间固定按 115 秒、C4 按 40 秒，不读服务器配置。
+
+### 样例校验
+
+`cargo test -p stats --release --test swing_samples -- --nocapture`，3 个样例 demo：
+
+- 每回合双方 Swing 之和为 0；T 方合计等于 `100 × (结果 − 开局胜率)`；胜方合计为正；曲线最后一点收敛到 0 或 1。
+- 整场 Swing 和 HLTV 2.0 的 Spearman 秩相关：官匹 0.70、平台 0.95、职业 0.78。Swing 最高和最低的人分别在 Rating 的前三和后三里。胜方平均 Swing 为正，负方为负。
+- 固定数值，例如职业比赛 tabseN（20/7，ADR 99）+8.63、Grim（7/14）−8.57；官匹 0VERK1LL 的 ADR 只有 42，但赢过一次残局，Swing 为 +2.74，排在 ADR 更高的几名对手之前。
 
 ## 校验
 

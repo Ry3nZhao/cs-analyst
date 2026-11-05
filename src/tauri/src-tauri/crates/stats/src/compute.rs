@@ -1,6 +1,7 @@
 //! The single pass that turns one match's events into [`MatchStats`].
 
 use crate::econ::{BuyType, Nade, NadeInventory};
+use crate::swing::{self, DeathKind, Participant, RoundInput, WinModel};
 use crate::*;
 use std::collections::{BTreeMap, HashMap, HashSet};
 
@@ -39,8 +40,13 @@ fn is_side(t: Option<u8>) -> Option<u8> {
     t.filter(|t| *t == TEAM_T || *t == TEAM_CT)
 }
 
-/// Compute every derived statistic of one match.
+/// Compute every derived statistic of one match, with the built-in (prior-only) Swing model.
 pub fn compute(ev: MatchEvents<'_>) -> MatchStats {
+    compute_with_model(ev, &WinModel::prior())
+}
+
+/// Compute every derived statistic of one match; Swing uses `model`.
+pub fn compute_with_model(ev: MatchEvents<'_>, model: &WinModel) -> MatchStats {
     let tick_rate = if ev.tick_rate > 0.0 { ev.tick_rate } else { 64.0 };
     let window = (TRADE_WINDOW_SECS * tick_rate).round() as i32;
 
@@ -164,6 +170,8 @@ pub fn compute(ev: MatchEvents<'_>) -> MatchStats {
     let mut team_rounds: Vec<TeamRoundStats> = vec![];
     let mut summaries: Vec<RoundSummary> = vec![];
     let mut pairs: BTreeMap<(u64, u64), PairStats> = BTreeMap::new();
+    let mut win_probability: Vec<RoundWinProbability> = vec![];
+    let mut swing_samples: Vec<BucketSample> = vec![];
     // Per-player extra counters not kept per round.
     #[derive(Default)]
     struct Extra {
@@ -227,6 +235,7 @@ pub fn compute(ev: MatchEvents<'_>) -> MatchStats {
                         utility_thrown: 0,
                         enemies_flashed: if blind_data_available { Some(0) } else { None },
                         unused_utility_value: 0,
+                        swing: 0.0,
                     },
                 )
             })
@@ -543,6 +552,50 @@ pub fn compute(ev: MatchEvents<'_>) -> MatchStats {
             }
         }
 
+        // ---- Swing (needs equipment values) ----
+        let round_bombs: Vec<&BombEvent> = bombs_by.get(&rn).map(|v| v.to_vec()).unwrap_or_default();
+        let out = swing::simulate_round(
+            model,
+            RoundInput {
+                round: rn,
+                tick_rate,
+                origin,
+                end_tick: r.end_tick,
+                winner: r.winner,
+                participants: participants
+                    .iter()
+                    .map(|p| Participant {
+                        steamid: *p,
+                        side: pr[p].side,
+                        equip: pr[p].equip_value,
+                        kit: econ.get(&(rn, *p)).and_then(|e| e.has_defuser).unwrap_or(false),
+                    })
+                    .collect(),
+                kills: kills
+                    .iter()
+                    .enumerate()
+                    .map(|(i, k)| {
+                        let dk = match kinds[i] {
+                            KillKind::Kill => DeathKind::Kill,
+                            KillKind::TeamKill => DeathKind::TeamKill,
+                            KillKind::Suicide => DeathKind::Suicide,
+                            KillKind::World => DeathKind::World,
+                        };
+                        (*k, dk, traded[i])
+                    })
+                    .collect(),
+                damages: damages.clone(),
+                bombs: round_bombs,
+            },
+        );
+        for (p, v) in &out.swing {
+            if let Some(s) = pr.get_mut(p) {
+                s.swing += *v;
+            }
+        }
+        win_probability.push(out.curve);
+        swing_samples.extend(out.samples);
+
         // ---- KAST ----
         for s in pr.values_mut() {
             s.kast = s.kills > 0 || s.assists > 0 || !s.died || s.traded;
@@ -699,6 +752,7 @@ pub fn compute(ev: MatchEvents<'_>) -> MatchStats {
                 *total += n;
             }
             m.unused_utility_value += s.unused_utility_value;
+            m.swing_total += s.swing;
         }
         m.finalize();
         players.push(m);
@@ -715,13 +769,15 @@ pub fn compute(ev: MatchEvents<'_>) -> MatchStats {
         team_rounds,
         rounds: summaries,
         pairs: pairs.into_values().collect(),
+        win_probability,
+        swing_samples: swing::merge_samples(swing_samples),
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use demo_parse::{Economy, Grenade, Kill, Player, Round};
+    use demo_parse::{Damage, Economy, Grenade, Kill, Player, Round};
 
     const A1: u64 = 1;
     const A2: u64 = 2;
@@ -779,6 +835,7 @@ mod tests {
         kills: Vec<Kill>,
         econ: Vec<Economy>,
         grenades: Vec<Grenade>,
+        damages: Vec<Damage>,
     }
 
     impl Fixture {
@@ -800,6 +857,7 @@ mod tests {
                 kills: vec![],
                 econ,
                 grenades: vec![],
+                damages: vec![],
             }
         }
         fn run(&self) -> MatchStats {
@@ -808,7 +866,7 @@ mod tests {
                 players: &self.players,
                 rounds: &self.rounds,
                 kills: &self.kills,
-                damages: &[],
+                damages: &self.damages,
                 grenades: &self.grenades,
                 blinds: &[],
                 bombs: &[],
@@ -846,6 +904,50 @@ mod tests {
         assert_eq!(a2.multi_kills[3], 1);
         assert_eq!(s.rounds[0].kills.iter().filter(|k| k.trade).count(), 1);
         assert_eq!(s.rounds[0].mvp, Some(A2));
+    }
+
+    #[test]
+    fn swing_attribution_shares() {
+        use crate::swing::{DAMAGE_ASSIST_MAX_SHARE, FLASH_ASSIST_SHARE};
+        let mut f = Fixture::new(vec![round(1, TEAM_T)]);
+        let t0 = 10_100 + 64 * 10;
+        let dmg = |tick: i32, a: u64, v: u64, after: i32| Damage {
+            round: 1,
+            tick,
+            attacker: Some(a),
+            victim: Some(v),
+            weapon: "ak47".into(),
+            dmg_health: 100 - after,
+            dmg_armor: 0,
+            health_after: after,
+            armor_after: 0,
+            hitgroup: None,
+            attacker_team: Some(TEAM_T),
+            victim_team: Some(TEAM_CT),
+        };
+        // B1 hits A1 for 50, then B2 kills A1 with a flash assist from B3; A2 survives untraded.
+        f.damages = vec![dmg(t0, B1, A1, 50), dmg(t0 + 64, B2, A1, 0)];
+        let mut k = kill(1, t0 + 64, Some(B2), A1, (TEAM_T, TEAM_CT));
+        k.assister = Some(B3);
+        k.assisted_flash = true;
+        f.kills = vec![k];
+        let s = f.run();
+        let sw = |p: u64| s.player_rounds.iter().find(|r| r.steamid == p).unwrap().swing as f64;
+        let kill_pt = s.win_probability[0].points.iter().find(|p| p.kind == "kill").unwrap();
+        let g = 100.0 * (kill_pt.p_after - kill_pt.p_before) as f64;
+        assert!(g > 0.0, "a T kill raises the T win probability");
+        // B3: exactly the flash share of the kill (plus its share of the time drift / round end).
+        let even = sw(B3) - g * FLASH_ASSIST_SHARE;
+        let pool = DAMAGE_ASSIST_MAX_SHARE * 0.5;
+        // Every T shares the same "even" part (drift + round end), so subtract it.
+        assert!((sw(B2) - even - g * (1.0 - FLASH_ASSIST_SHARE - pool)).abs() < 0.01, "killer {}", sw(B2));
+        let dmg_pt = s.win_probability[0].points.iter().find(|p| p.kind == "damage").unwrap();
+        let hit = 100.0 * (dmg_pt.p_after - dmg_pt.p_before) as f64;
+        assert!((sw(B1) - even - hit - g * pool).abs() < 0.01, "damage assister {}", sw(B1));
+        assert!(sw(A1) < sw(A2), "the victim loses more than the survivor");
+        // Zero-sum.
+        let total: f64 = [A1, A2, B1, B2, B3].iter().map(|p| sw(*p)).sum();
+        assert!(total.abs() < 1e-3);
     }
 
     #[test]

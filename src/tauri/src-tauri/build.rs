@@ -32,6 +32,7 @@ const COMMANDS: &[&str] = &[
     "get_analysis_status",
     "get_match_detail",
     "list_player_stats",
+    "get_round_win_probability",
     "search_persons",
     "get_person",
     "get_head_to_head",
