@@ -436,6 +436,11 @@ async function cancel(jobId: string) {
 }
 
 function openDetail(job: MatchDto) {
+  // 已解析的对局进入详情页，其余保留原来的抽屉
+  if (job.analysisStatus === 'done') {
+    navigateTo(`/matches/${encodeURIComponent(job.id)}`);
+    return;
+  }
   selected.value = job;
   drawerOpen.value = true;
 }
