@@ -59,6 +59,11 @@
         <MatchRoundTimeline :detail="detail" :mine-team="mineTeam" />
       </section>
 
+      <!-- 回合胜率 / Swing -->
+      <section class="card card-pad">
+        <MatchWinProbability :detail="detail" :mine-team="mineTeam" />
+      </section>
+
       <!-- 经济曲线 -->
       <section class="card card-pad">
         <MatchEconomyChart :detail="detail" :mine-team="mineTeam" />

@@ -109,6 +109,13 @@ watch(tab, (t) => { sortKey.value = DEFAULT_SORT[t]; sortDesc.value = true; });
 const sum = (a: number[] | undefined, from: number) => (a ?? []).slice(from).reduce((s, v) => s + v, 0);
 const pct = (n: number, d: number) => (d > 0 ? (n / d) * 100 : null);
 const frac = (n: number, d: number) => `${n}/${d}`;
+/** 带正负号的小数，例如 +3.2 / −1.0 / 0.0。 */
+const fmtSigned = (v: number, digits: number) => {
+  const s = v.toFixed(digits);
+  if (Number(s) > 0) return `+${s}`;
+  if (Number(s) < 0) return `−${s.slice(1)}`;
+  return (0).toFixed(digits);
+};
 
 // 经济页需要的逐回合汇总
 const econ = computed(() => {
@@ -138,6 +145,11 @@ const BASIC: Col[] = [
   { key: 'kast', metric: 'kast', label: 'KAST', title: '有击杀 / 助攻 / 存活 / 被补枪的回合比例', value: p => p.derived.kast, digits: 0, text: p => `${p.derived.kast.toFixed(0)}%` },
   { key: 'hs', metric: 'hsPct', label: 'HS%', title: '爆头击杀比例', value: p => p.derived.hsPct, text: p => `${p.derived.hsPct.toFixed(0)}%` },
   { key: 'rating', metric: 'rating', label: 'Rating', title: 'HLTV Rating 2.0（公开近似公式，仅供参考）', value: p => p.derived.rating, digits: 2 },
+  {
+    key: 'swing', metric: 'swing', label: 'Swing', title: '平均每回合让本方回合胜率提高的百分点（悬停看全场合计）',
+    value: p => Math.round(p.derived.swing * 10) / 10, signed: true, text: p => fmtSigned(p.derived.swing, 1),
+    hint: p => `全场合计 ${fmtSigned(p.swingTotal, 1)} 百分点`,
+  },
   { key: 'k2', label: '2K', value: p => p.multiKills[2] ?? 0 },
   { key: 'k3', label: '3K', value: p => p.multiKills[3] ?? 0 },
   { key: 'k4', label: '4K', value: p => p.multiKills[4] ?? 0 },

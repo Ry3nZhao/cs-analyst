@@ -1,5 +1,5 @@
 // 比赛详情页（W2-A）用到的格式化和「我」的判定。
-import type { BuyType, MatchDetailDto, PersonSummaryDto, PlayerMatchStatsDto, Side, SteamId, TeamId } from '@cs-analyst/shared-types';
+import type { BuyType, MatchDetailDto, MatchWinProbabilityDto, PersonSummaryDto, PlayerMatchStatsDto, Side, SteamId, TeamId } from '@cs-analyst/shared-types';
 import { tauriInvoke } from '~/composables/useTauri';
 
 /**
@@ -132,4 +132,9 @@ export function usePlayerIndex(detail: Ref<MatchDetailDto | null>) {
     for (const p of detail.value?.scoreboard ?? []) m.set(p.steamid, p);
     return m;
   });
+}
+
+/** 回合胜率曲线与每人每回合 Swing（W2-B）；对局未解析时返回 null。 */
+export function fetchWinProbability(matchId: string) {
+  return tauriInvoke<MatchWinProbabilityDto | null>('get_round_win_probability', { matchId });
 }
