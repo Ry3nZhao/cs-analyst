@@ -1,8 +1,10 @@
+mod analysis;
 mod commands;
 mod database;
 mod orchestrator;
 mod sidecar;
 
+use analysis::AnalysisQueue;
 use database::{repo, resolve_data_root, Database};
 use orchestrator::DownloadOrchestrator;
 use parking_lot::Mutex;
@@ -14,6 +16,7 @@ pub struct AppState {
     pub db: Arc<Mutex<Database>>,
     pub sidecar: Arc<SidecarManager>,
     pub orchestrator: Arc<DownloadOrchestrator>,
+    pub analysis: Arc<AnalysisQueue>,
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -29,7 +32,9 @@ pub fn run() {
             let db = Arc::new(Mutex::new(database));
             let script = resolve_sidecar_script();
             let sidecar = Arc::new(SidecarManager::new(script));
-            let orchestrator = Arc::new(DownloadOrchestrator::new(db.clone(), sidecar.clone()));
+            let analysis = AnalysisQueue::new(db.clone());
+            analysis.start(app.handle().clone());
+            let orchestrator = Arc::new(DownloadOrchestrator::new(db.clone(), sidecar.clone(), analysis.clone()));
             orchestrator.wire_sidecar_events(app.handle().clone());
             let _ = sidecar.start();
 
@@ -37,7 +42,17 @@ pub fn run() {
                 db: db.clone(),
                 sidecar,
                 orchestrator: orchestrator.clone(),
+                analysis: analysis.clone(),
             });
+
+            // 补齐历史对局的完整解析（中断 / 失败可重试 / 解析器版本升级）
+            {
+                let analysis = analysis.clone();
+                std::thread::spawn(move || {
+                    std::thread::sleep(std::time::Duration::from_secs(3));
+                    analysis.enqueue_backlog();
+                });
+            }
 
             let run_startup_discover = repo::get_settings(&db.lock())
                 .map(|settings| settings.auto_discover_on_startup)
@@ -98,6 +113,8 @@ pub fn run() {
             commands::import_demos,
             commands::refresh_match_metadata,
             commands::force_download_now,
+            commands::reanalyze_matches,
+            commands::get_analysis_status,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

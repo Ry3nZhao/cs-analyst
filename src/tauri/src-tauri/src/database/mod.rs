@@ -1,3 +1,4 @@
+pub mod analysis;
 pub mod models;
 pub mod repo;
 
@@ -20,10 +21,10 @@ pub enum DbError {
 pub type Result<T> = std::result::Result<T, DbError>;
 
 /// Each entry: (SQL file, PRAGMA user_version after apply). Add `002_*.sql` when needed.
-const MIGRATIONS: &[(&str, i32)] = &[(
-    include_str!("../../../../../migrations/sqlite/001_initial.sql"),
-    1,
-)];
+const MIGRATIONS: &[(&str, i32)] = &[
+    (include_str!("../../../../../migrations/sqlite/001_initial.sql"), 1),
+    (include_str!("../../../../../migrations/sqlite/002_analysis.sql"), 2),
+];
 
 pub struct Database {
     pub conn: Connection,
@@ -36,6 +37,7 @@ impl Database {
         fs::create_dir_all(data_root.join("db"))?;
         fs::create_dir_all(data_root.join("demos"))?;
         fs::create_dir_all(data_root.join("state"))?;
+        fs::create_dir_all(data_root.join("analysis"))?;
         let db_path = data_root.join("db").join("analyst.db");
         let mut conn = Connection::open(&db_path)?;
         let mut legacy_path: Option<PathBuf> = None;
@@ -121,9 +123,12 @@ impl Database {
             if version >= *target_version {
                 continue;
             }
-            self.conn.execute_batch(sql)?;
-            self.conn
-                .execute_batch(&format!("PRAGMA user_version = {target_version}"))?;
+            // 每个迁移单独一个事务：失败时整体回滚，user_version 不前进
+            let tx = self.conn.unchecked_transaction()?;
+            tx.execute_batch(sql)?;
+            tx.pragma_update(None, "user_version", target_version)?;
+            tx.commit()?;
+            eprintln!("[db] migrated to user_version={target_version}");
         }
         Ok(())
     }

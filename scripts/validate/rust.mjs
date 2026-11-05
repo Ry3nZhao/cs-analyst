@@ -17,7 +17,7 @@ assertFile(sidecarResourceIndex);
 runPnpm(['--filter', '@cs-analyst/desktop', 'generate'], { label: 'Validate: nuxt generate' });
 runPnpm(['generate-icons'], { label: 'Validate: generate icons' });
 
-runCargo(['check', '--timings'], {
+runCargo(['check', '--workspace', '--timings'], {
   cwd: tauriDir,
   label: 'Validate: cargo check',
   env: {
@@ -25,6 +25,13 @@ runCargo(['check', '--timings'], {
     CARGO_TERM_PROGRESS_WIDTH: '80',
     CARGO_TERM_COLOR: 'always',
   },
+});
+
+// 单元测试 + schema 测试；本机设置了 CS_ANALYST_SAMPLE_DEMOS（或默认 <sample-dir> 存在）时还会跑样例 demo 回归
+runCargo(['test', '--workspace'], {
+  cwd: tauriDir,
+  label: 'Validate: cargo test',
+  env: { CARGO_TERM_COLOR: 'always' },
 });
 
 writeStamp(path.join(buildValidateDir, 'rust.json'), {

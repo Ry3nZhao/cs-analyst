@@ -384,3 +384,14 @@ fn resolve_data_path(state: &AppState, path: &Path) -> Result<PathBuf, String> {
     }
     Ok(canonical_path)
 }
+
+/// Re-run full demo analysis. `ids = None` re-analyzes every downloaded match. Returns how many were queued.
+#[tauri::command]
+pub fn reanalyze_matches(state: State<'_, AppState>, ids: Option<Vec<String>>) -> usize {
+    state.analysis.reanalyze(ids)
+}
+
+#[tauri::command]
+pub fn get_analysis_status(state: State<'_, AppState>) -> crate::analysis::AnalysisQueueStatus {
+    state.analysis.status()
+}

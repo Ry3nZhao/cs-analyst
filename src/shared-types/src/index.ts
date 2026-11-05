@@ -181,6 +181,30 @@ export interface MatchDto {
   demoUrl?: string | null;
   attempts: number;
   lastError?: string | null;
+  // Full demo analysis
+  analysisStatus?: AnalysisStatus | null;
+  analysisError?: string | null;
+  analyzedAt?: string | null;
+  analysisMs?: number | null;
+  roundsPlayed?: number | null;
+}
+
+/** 完整解析状态（null = 尚未排队，例如还没下载完） */
+export type AnalysisStatus = 'pending' | 'running' | 'done' | 'failed';
+
+/** `analysis_updated` 事件 */
+export interface AnalysisUpdatedDto {
+  matchId: string;
+  status: AnalysisStatus;
+  error?: string | null;
+  /** 队列中剩余数量 */
+  queued: number;
+}
+
+/** `analysis_queue` 事件 / `get_analysis_status` */
+export interface AnalysisQueueStatusDto {
+  queued: number;
+  running?: string | null;
 }
 
 /** @deprecated use MatchDto */

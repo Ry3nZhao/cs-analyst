@@ -65,7 +65,7 @@ cargo tauri dev
 | `pnpm validate` | 本地跑完整 Validate（对齐 CI） |
 | `pnpm validate:typescript` | 仅 TS / sidecar 编译 |
 | `pnpm validate:frontend` | 仅 Nuxt generate，输出到 `build/validate/desktop/` |
-| `pnpm validate:rust` | sidecar 打包 + 图标 + `cargo check` |
+| `pnpm validate:rust` | sidecar 打包 + 图标 + `cargo check` + `cargo test` |
 | `pnpm release` | 本地 Release：打包并收集安装包到 `build/release/` |
 | `pnpm build` | 编译 shared-types、sidecar，并 Nuxt generate |
 | `pnpm build:sidecar` | 打包 sidecar 到 Tauri resources |
@@ -88,11 +88,27 @@ build/
 
 ## Sidecar 调试
 
-开发时 sidecar 默认加载 `packages/sidecar/dist/index.js`。可通过环境变量覆盖：
+开发时 sidecar 默认加载 `src/sidecar/dist/index.js`。可通过环境变量覆盖：
 
 - `CS_ANALYST_SIDECAR` — sidecar 入口脚本路径
 - `CS_ANALYST_NODE` — Node 可执行文件路径
 
+## Demo 解析与样例测试
+
+解析在 Rust 里完成：`src/tauri/src-tauri/crates/demo-parse`（基于 vendor 的 demoparser，见 `vendor/demoparser/README.md`）。
+
+```powershell
+cd src/tauri/src-tauri
+# 单元测试 + 样例 demo 回归（数字已固定：回合数、T 胜场、击杀数等）
+cargo test --workspace
+# 打印某个 demo 的解析摘要（玩家、K/D、每回合胜负）
+cargo run -p demo-parse --release --example summary -- "<path>.dem"
+```
+
+样例目录由 `CS_ANALYST_SAMPLE_DEMOS` 指定，默认 `<sample-dir>`（含 `Official/`、`Platforms/`、`Profs/` 三类来源）。目录不存在时相关测试自动跳过。
+
+修改解析结果的含义时，提升 `demo_parse::PARSER_VERSION`：启动后已解析的对局会自动重新解析。
+
 ## 数据目录
 
-开发模式下数据落在 `target/debug/`（exe 所在目录）。详见 [项目介绍 — 数据存储](../README.md#数据存储)。
+数据落在 `%LOCALAPPDATA%\com.cs-analyst.app\`（`just data` 打开）。详见 [项目介绍 — 数据存储](../README.md#数据存储)。

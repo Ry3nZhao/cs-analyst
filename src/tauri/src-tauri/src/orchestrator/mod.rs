@@ -1,4 +1,5 @@
 use crate::database::models::{BackgroundTask, DiscoveredMatchPayload, MetadataRefreshResult, MetadataRefreshSummary, ParsedDemMetadata};
+use crate::analysis::AnalysisQueue;
 use crate::database::repo;
 use crate::database::Database;
 use crate::sidecar::SidecarManager;
@@ -121,6 +122,7 @@ pub enum OrchestratorError {
 pub struct DownloadOrchestrator {
     db: Arc<Mutex<Database>>,
     sidecar: Arc<SidecarManager>,
+    analysis: Arc<AnalysisQueue>,
     queue_paused: Mutex<bool>,
     last_discover: Mutex<Option<std::time::Instant>>,
     active_task: Mutex<Option<BackgroundTask>>,
@@ -128,10 +130,11 @@ pub struct DownloadOrchestrator {
 }
 
 impl DownloadOrchestrator {
-    pub fn new(db: Arc<Mutex<Database>>, sidecar: Arc<SidecarManager>) -> Self {
+    pub fn new(db: Arc<Mutex<Database>>, sidecar: Arc<SidecarManager>, analysis: Arc<AnalysisQueue>) -> Self {
         Self {
             db,
             sidecar,
+            analysis,
             queue_paused: Mutex::new(true),
             last_discover: Mutex::new(None),
             active_task: Mutex::new(None),
@@ -449,6 +452,8 @@ impl DownloadOrchestrator {
             match orchestrator.refresh_all_metadata(&app) {
                 Ok(summary) => {
                     let _ = app.emit("metadata_refresh_completed", &summary);
+                    // 元数据刷新可能新增 / 合并对局，补齐尚未解析的
+                    orchestrator.analysis.enqueue_backlog();
                     orchestrator.set_task(
                         &app,
                         "metadata",
@@ -578,16 +583,20 @@ impl DownloadOrchestrator {
             return Ok(false);
         }
 
-        let db = self.db.lock();
-        repo::update_match_dem_metadata(
-            &db,
-            match_db_id,
-            &metadata,
-            &rel_path,
-            &file_name,
-            file_size,
-            overwrite,
-        )?;
+        {
+            let db = self.db.lock();
+            repo::update_match_dem_metadata(
+                &db,
+                match_db_id,
+                &metadata,
+                &rel_path,
+                &file_name,
+                file_size,
+                overwrite,
+            )?;
+        }
+        // 文件头有效 → 排队做完整解析（下载完成、导入、元数据刷新都会走到这里；已是最新解析的跳过）
+        self.analysis.enqueue_if_needed(match_db_id);
         Ok(true)
     }
 

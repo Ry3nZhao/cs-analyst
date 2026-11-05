@@ -10,3 +10,4 @@
 | [build.md](build.md) | 本地打包与各平台产物 |
 | [ci.md](ci.md) | GitHub Actions、自动构建与 Release |
 | [architecture.md](architecture.md) | 仓库结构、模块职责、平台适配器 |
+| [roadmap.md](roadmap.md) | 对标 Leetify 的分析能力路线图 |

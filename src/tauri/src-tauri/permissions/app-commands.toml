@@ -28,6 +28,8 @@ permissions = [
   "allow-cancel-download-job",
   "allow-open-path",
   "allow-open-data-subdirectory",
+  "allow-reanalyze-matches",
+  "allow-get-analysis-status",
   "allow-import-demos",
   "allow-refresh-match-metadata",
   "allow-force-download-now",

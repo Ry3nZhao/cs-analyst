@@ -8,8 +8,8 @@
 
 | Workflow | 触发 | 作用 |
 |----------|------|------|
-| `validate.yml` | push/PR → `master` | 编译 TS、Nuxt generate、`cargo check` |
-| `release.yml` | Validate 成功后（`workflow_run`）；push tag `v*`；或手动 `workflow_dispatch` | 三平台并行打包 |
+| `validate.yml` | push/PR → `master` | 编译 TS、Nuxt generate；Windows 上 `cargo check` + `cargo test` |
+| `release.yml` | Validate 成功后（`workflow_run`）；push tag `v*`；或手动 `workflow_dispatch` | 打包 Windows 安装包（目前只发布 Windows） |
 
 ## 发布通道
 
@@ -28,7 +28,7 @@
 | push tag `v*` | 否 | 是 | **是**（正式版 `v*`） |
 | 手动 Run workflow | — | 是 | 可选（勾选 Create GitHub Release） |
 
-日常开发：推到 `master` 先跑 **Validate**；全部 job 通过后 **Release** 构建三平台，并更新 **`latest-beta`** 预发布包。
+日常开发：推到 `master` 先跑 **Validate**；全部 job 通过后 **Release** 构建 Windows 安装包，并更新 **`latest-beta`** 预发布包。
 
 Release 构建前会先执行 `pnpm build:sidecar`，再初始化 Rust cache / Tauri 编译（Tauri `build.rs` 依赖 `resources/sidecar/**`）。
 
@@ -47,7 +47,7 @@ git push origin v0.1.0
 
 1. Actions → **Release** → Run workflow
 2. 选择 `patch` / `minor` 升版本（或 `none` 仅构建）
-3. 勾选 **Create GitHub Release** 后，三平台产物会出现在 Releases 与各 job 的 Artifacts
+3. 勾选 **Create GitHub Release** 后，Windows 安装包会出现在 Releases 与各 job 的 Artifacts
 
 ### Beta 包获取
 
@@ -61,7 +61,7 @@ git push origin v0.1.0
 - **Node.js**：24.16.0（`.node-version`，与本地一致）
 - **Actions**：`checkout` / `setup-node` / `pnpm/action-setup` / `upload-artifact` / `download-artifact` 均为 **v5**（Node 24 运行时）；`rust-cache@v2.9.1`
 - **兜底**：workflow 级 `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true`（覆盖尚未升级的第三方 Action）
-- **Rust**：`dtolnay/rust-toolchain@stable`；Linux runner 额外安装 `libwebkit2gtk` 等 Tauri 依赖
+- **Rust**：`dtolnay/rust-toolchain@stable`；Rust 校验与测试跑在 `windows-2022`。样例 demo 不在 CI 上，相关回归测试会自动跳过
 - **Windows Release**：`windows-2022`（自带 MSVC）
 
 本地与 CI 对齐的打包命令见 [打包发布 — 收集构建产物](build.md#收集构建产物）。

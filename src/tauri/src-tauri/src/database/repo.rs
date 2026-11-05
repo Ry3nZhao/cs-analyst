@@ -171,7 +171,8 @@ pub fn list_matches(db: &Database) -> Result<Vec<Match>> {
                 m.game_directory, m.fullpackets_version, m.allow_clientside_entities,
                 m.demo_header_field_9, m.demo_header_field_10, m.demo_version_name,
                 m.demo_version_guid, m.playback_time, m.playback_ticks, m.playback_frames,
-                m.dem_game_info
+                m.dem_game_info,
+                m.analysis_status, m.analysis_error, m.analyzed_at, m.analysis_ms, m.rounds_played
          FROM matches m
          ORDER BY m.played_at DESC NULLS LAST, m.discovered_at DESC",
     )?;
@@ -218,6 +219,11 @@ pub fn list_matches(db: &Database) -> Result<Vec<Match>> {
             playback_ticks: row.get(32)?,
             playback_frames: row.get(33)?,
             dem_game_info,
+            analysis_status: row.get(35)?,
+            analysis_error: row.get(36)?,
+            analyzed_at: row.get(37)?,
+            analysis_ms: row.get(38)?,
+            rounds_played: row.get(39)?,
         })
     })?;
     Ok(rows.filter_map(|r| r.ok()).collect())

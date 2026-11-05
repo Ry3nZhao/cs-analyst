@@ -5,6 +5,11 @@ description = "CS Analyst"
 authors = ["Ryen"]
 edition = "2021"
 
+[workspace]
+# crates/* = 自研模块；vendor/* = 第三方 fork（作为 path 依赖自动进入 workspace）
+members = ["crates/*"]
+resolver = "2"
+
 [lib]
 name = "cs_analyst_lib"
 crate-type = ["lib", "cdylib", "staticlib"]
@@ -26,9 +31,19 @@ parking_lot = "0.12"
 tokio = { version = "1", features = ["full"] }
 dirs = "6"
 open = "5"
+demo-parse = { path = "crates/demo-parse" }
 
 [profile.release]
-panic = "abort"
+# unwind（而非 abort）：demo 解析器遇到损坏文件可能 panic，由分析 worker 捕获，不能让整个应用退出
+panic = "unwind"
 codegen-units = 1
 lto = true
 strip = true
+
+# 调试构建也优化 demo 解析器，否则 debug 版解析一场要几十秒
+[profile.dev.package.parser]
+opt-level = 3
+[profile.dev.package.csgoproto]
+opt-level = 3
+[profile.dev.package.demo-parse]
+opt-level = 3

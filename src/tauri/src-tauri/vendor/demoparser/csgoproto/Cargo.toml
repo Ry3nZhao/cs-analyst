@@ -1,0 +1,18 @@
+# Vendored from https://github.com/LaihoE/demoparser (src/csgoproto), MIT. See ../README.md.
+# Generated code (protobuf.rs, maps.rs, message_type.rs) is committed; no build script / protoc needed.
+[package]
+name = "csgoproto"
+version = "0.1.5"
+authors = ["Laiho"]
+edition = "2021"
+license = "MIT"
+publish = false
+
+[lints.rust]
+warnings = "allow"
+
+[dependencies]
+prost = "0.13.3"
+phf = { version = "0.11", features = ["macros"] }
+strum = { version = "0.26", features = ["derive"] }
+winnow = { version = "0.7.2", features = ["simd"] }

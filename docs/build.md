@@ -33,8 +33,8 @@ pnpm collect-bundle windows
 | 平台 | 默认产物 |
 |------|----------|
 | Windows | NSIS `.exe` |
-| macOS | `.dmg` |
-| Linux | `.AppImage`、`.deb`、`.rpm` |
+
+目前只发布与测试 Windows；macOS / Linux 的打包配置保留在 `tauri.conf.json` 与 `scripts/release/collect.mjs`，CI 中已移除。
 
 ## 输出目录
 

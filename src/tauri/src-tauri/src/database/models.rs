@@ -66,6 +66,12 @@ pub struct Match {
     pub playback_ticks: Option<i64>,
     pub playback_frames: Option<i64>,
     pub dem_game_info: Option<serde_json::Value>,
+    // Full demo analysis (migration 002)
+    pub analysis_status: Option<String>,
+    pub analysis_error: Option<String>,
+    pub analyzed_at: Option<String>,
+    pub analysis_ms: Option<i64>,
+    pub rounds_played: Option<i64>,
 }
 
 /// Kept for backwards compat with old serialized field name

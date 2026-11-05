@@ -1,0 +1,14 @@
+[package]
+name = "demo-parse"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "CS2 demo → normalized events, per-shot state and sampled replay frames"
+
+[dependencies]
+parser = { path = "../../vendor/demoparser/parser" }
+ahash = "0.8.3"
+memmap2 = "0.9.4"
+serde = { version = "1", features = ["derive"] }
+thiserror = "2"
+zstd = "0.13"

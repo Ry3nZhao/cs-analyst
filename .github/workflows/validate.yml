@@ -69,8 +69,8 @@ jobs:
         run: pnpm --filter @cs-analyst/desktop generate
 
   rust:
-    name: Rust check
-    runs-on: ubuntu-latest
+    name: Rust check + test (Windows)
+    runs-on: windows-2022
     env:
       CARGO_TERM_PROGRESS_WHEN: always
       CARGO_TERM_PROGRESS_WIDTH: 80
@@ -78,9 +78,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
-
-      - name: Install system dependencies
-        run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf build-essential python3
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v5
@@ -101,6 +98,7 @@ jobs:
         run: pnpm build:sidecar
 
       - name: Verify sidecar resources
+        shell: bash
         run: test -f src/tauri/src-tauri/resources/sidecar/index.js
 
       - name: Generate frontend
@@ -119,4 +117,9 @@ jobs:
 
       - name: Cargo check
         working-directory: src/tauri/src-tauri
-        run: cargo check --timings
+        run: cargo check --workspace --timings
+
+      # 样例 demo 不在 CI 上（未设置 CS_ANALYST_SAMPLE_DEMOS 时自动跳过）；这里跑单元测试与 schema 测试
+      - name: Cargo test
+        working-directory: src/tauri/src-tauri
+        run: cargo test --workspace

@@ -6,6 +6,8 @@ export type MatchColumnKey =
   | 'durationSeconds'
   | 'source'
   | 'status'
+  | 'analysis'
+  | 'roundsPlayed'
   | 'progress'
   | 'playedAt'
   | 'gameMode'
@@ -42,6 +44,8 @@ export const MATCH_COLUMNS: MatchColumnDef[] = [
   { key: 'durationSeconds', label: '持续时间', defaultVisible: true },
   { key: 'source', label: '来源', defaultVisible: true },
   { key: 'status', label: '状态', defaultVisible: false },
+  { key: 'analysis', label: '解析', defaultVisible: true },
+  { key: 'roundsPlayed', label: '回合', defaultVisible: true },
   { key: 'progress', label: '进度', defaultVisible: false, className: 'col-prog' },
   { key: 'playedAt', label: '时间', defaultVisible: false },
   { key: 'gameMode', label: '模式', defaultVisible: false },
@@ -131,6 +135,7 @@ export function formatMatchCell(key: MatchColumnKey, job: MatchDto, helpers: {
     case 'mapName': return job.mapName ?? '—';
     case 'durationSeconds': return helpers.fmtDuration(job.durationSeconds);
     case 'source': return job.source;
+    case 'roundsPlayed': return job.roundsPlayed != null ? String(job.roundsPlayed) : '—';
     case 'playedAt': return helpers.fmtTime(job.playedAt);
     case 'gameMode': return helpers.gameModeLabel(job.gameMode);
     case 'gameType': return helpers.gameTypeLabel(job.gameType);

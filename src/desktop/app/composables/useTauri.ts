@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
-import type { AppSettingsDto, BackgroundTaskDto, ImportSummaryDto, MatchDto, MetadataRefreshSummaryDto, SubAccountDto, UserDto, ValveBotConfigDto, ValveBotConfigUpdateDto } from '@cs-analyst/shared-types';
+import type { AnalysisQueueStatusDto, AnalysisUpdatedDto, AppSettingsDto, BackgroundTaskDto, ImportSummaryDto, MatchDto, MetadataRefreshSummaryDto, SubAccountDto, UserDto, ValveBotConfigDto, ValveBotConfigUpdateDto } from '@cs-analyst/shared-types';
 
 export async function tauriInvoke<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {
   return invoke<T>(cmd, args);
@@ -54,4 +54,20 @@ export function listenMetadataRefreshCompleted(cb: (payload: MetadataRefreshSumm
   return () => unlisten?.();
 }
 
-export type { AppSettingsDto, BackgroundTaskDto, ImportSummaryDto, MatchDto, MetadataRefreshSummaryDto, SubAccountDto, UserDto, ValveBotConfigDto, ValveBotConfigUpdateDto };
+export function listenAnalysisUpdated(cb: (payload: AnalysisUpdatedDto) => void) {
+  let unlisten: (() => void) | null = null;
+  listen<AnalysisUpdatedDto>('analysis_updated', (e) => cb(e.payload)).then((fn) => {
+    unlisten = fn;
+  });
+  return () => unlisten?.();
+}
+
+export function listenAnalysisQueue(cb: (payload: AnalysisQueueStatusDto) => void) {
+  let unlisten: (() => void) | null = null;
+  listen<AnalysisQueueStatusDto>('analysis_queue', (e) => cb(e.payload)).then((fn) => {
+    unlisten = fn;
+  });
+  return () => unlisten?.();
+}
+
+export type { AnalysisQueueStatusDto, AnalysisUpdatedDto, AppSettingsDto, BackgroundTaskDto, ImportSummaryDto, MatchDto, MetadataRefreshSummaryDto, SubAccountDto, UserDto, ValveBotConfigDto, ValveBotConfigUpdateDto };

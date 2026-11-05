@@ -111,6 +111,18 @@
                 </template>
                 <span v-else class="dash">—</span>
               </template>
+              <template v-else-if="col.key === 'analysis'">
+                <span
+                  v-if="job.analysisStatus"
+                  class="status-chip"
+                  :style="statusStyle(analysisColorKey(job.analysisStatus))"
+                  :title="job.analysisError ?? (job.analysisMs != null ? `耗时 ${(job.analysisMs / 1000).toFixed(1)} 秒` : '')"
+                >
+                  <span class="status-dot2" :style="{ background: statusColor(analysisColorKey(job.analysisStatus)) }" />
+                  {{ analysisLabel(job.analysisStatus) }}
+                </span>
+                <span v-else class="dash">—</span>
+              </template>
               <template v-else-if="col.key === 'status'">
                 <span class="status-chip" :style="statusStyle(job.status)">
                   <span class="status-dot2" :style="{ background: statusColor(job.status) }" />
@@ -132,6 +144,12 @@
                 class="row-btn row-cancel"
                 @click="cancel(job.id)"
               >取消</button>
+              <button
+                v-if="job.status === 'completed' && job.filePath && !['pending','running'].includes(job.analysisStatus ?? '')"
+                class="row-btn row-retry"
+                :title="job.analysisStatus === 'failed' ? (job.analysisError ?? '') : ''"
+                @click="reanalyze(job.id)"
+              >{{ job.analysisStatus ? '重新解析' : '解析' }}</button>
             </td>
           </tr>
           <tr v-if="visibleJobs.length === 0">
@@ -171,7 +189,7 @@
 <script setup lang="ts">
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import type { MatchDto } from '@cs-analyst/shared-types';
-import { listenBackgroundTask, listenImportCompleted, listenJobProgress, listenJobsUpdated, listenMetadataRefreshCompleted, tauriInvoke } from '~/composables/useTauri';
+import { listenAnalysisUpdated, listenBackgroundTask, listenImportCompleted, listenJobProgress, listenJobsUpdated, listenMetadataRefreshCompleted, tauriInvoke } from '~/composables/useTauri';
 import { formatMatchCell, useMatchColumns, type MatchColumnKey } from '~/composables/useMatchColumns';
 
 definePageMeta({ layout: 'default' });
@@ -195,6 +213,7 @@ const stats = computed(() => {
     { label: '排队中', value: c('queued'),      color: '#818cf8' },
     { label: '下载中', value: c('downloading'), color: 'var(--c-accent-lt)' },
     { label: '失败',   value: c('failed') + c('expired'), color: 'var(--c-error)' },
+    { label: '已解析', value: jobs.value.filter(j => j.analysisStatus === 'done').length, color: 'var(--c-success)' },
   ];
 });
 
@@ -327,6 +346,26 @@ async function runImport() {
   }
 }
 
+function analysisLabel(s: string) {
+  return { pending: '待解析', running: '解析中', done: '已解析', failed: '解析失败' }[s] ?? s;
+}
+
+/** 复用下载状态的配色 */
+function analysisColorKey(s: string) {
+  return { pending: 'queued', running: 'downloading', done: 'completed', failed: 'failed' }[s] ?? s;
+}
+
+async function reanalyze(id: string) {
+  try {
+    await tauriInvoke<number>('reanalyze_matches', { ids: [id] });
+    const job = jobs.value.find(j => j.id === id);
+    if (job) job.analysisStatus = 'pending';
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    toast.add({ title: '无法开始解析', description: message, color: 'error' });
+  }
+}
+
 function statusLabel(s: string) {
   return { queued: '排队中', downloading: '下载中', completed: '已完成', failed: '失败', skipped: '跳过', expired: '过期' }[s] ?? s;
 }
@@ -420,7 +459,20 @@ onMounted(() => {
       });
     }
   });
-  onUnmounted(() => { u1(); u2(); u3(); u4(); u5(); });
+  let reloadTimer: ReturnType<typeof setTimeout> | null = null;
+  const u6 = listenAnalysisUpdated(({ matchId, status: analysisStatus, error }) => {
+    const job = jobs.value.find(j => j.id === matchId);
+    if (job) {
+      job.analysisStatus = analysisStatus;
+      job.analysisError = error ?? null;
+    }
+    // 解析完成后回合数等字段变化，合并刷新
+    if (analysisStatus === 'done' || analysisStatus === 'failed') {
+      if (reloadTimer) clearTimeout(reloadTimer);
+      reloadTimer = setTimeout(loadJobs, 800);
+    }
+  });
+  onUnmounted(() => { u1(); u2(); u3(); u4(); u5(); u6(); if (reloadTimer) clearTimeout(reloadTimer); });
 });
 </script>
 
@@ -428,7 +480,7 @@ onMounted(() => {
 .matches-page { display: flex; flex-direction: column; gap: 16px; height: 100%; }
 
 /* Stats */
-.stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.stats-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
 .stat-card {
   background: var(--c-card);
   border: 1px solid var(--c-border);

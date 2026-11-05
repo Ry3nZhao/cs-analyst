@@ -28,6 +28,8 @@ const COMMANDS: &[&str] = &[
     "import_demos",
     "refresh_match_metadata",
     "force_download_now",
+    "reanalyze_matches",
+    "get_analysis_status",
 ];
 
 fn main() {
