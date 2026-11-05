@@ -197,7 +197,15 @@
 | W2-F 瞄准训练 | W1-A | 反应、甩枪、跟枪、微调、急停节奏、压枪练习；灵敏度对齐 CS2（P8） |
 | W2-G 下载模块化 | 无 | JSON-RPC 协议加版本号并写成文档、模块健康检查和崩溃重启、adapter 单独开关、去掉 `dem-parser.ts`、为拆成 submodule 理清边界（随时可以开始） |
 
-## 第三波
+## 第三波 ✅ 全部合并（2026-11-06）
+
+- W3-A 高光/失误集锦、W3-B 个人主页合并后，`cargo test --workspace`、`nuxt generate`、Tauri debug 构建全部通过。
+- 合并后补做：第二波页面统一改用 `useMainPlayer()` 并接入 `MetricHelp`；比赛详情页加入 Swing 列和回合胜率曲线；动态路由页的顶栏标题。
+- 真实应用逐页 CDP 验收：主页、对局、比赛详情、选手、选手详情、枪法、训练、集锦、2D 回放、设置、账户、欢迎向导。
+- 待用户亲测：CS2 `-netconport` 自动跳转（见 `docs/highlights.md`）；训练的 Pointer Lock 手感。
+- 已知遗留：Valve demo 导入时 sidecar 不返回 `matchId`；「更新元数据」读不了 `.dem.zst`；「换弹时被杀」规则需要解析器加换弹状态；5E ELO 没有入库。
+
+### 第三波任务
 
 | 任务 | 依赖 | 开始时机 |
 |---|---|---|
