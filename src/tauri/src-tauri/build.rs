@@ -43,6 +43,12 @@ const COMMANDS: &[&str] = &[
     "rebuild_head_to_head",
     "get_aim_stats",
     "get_sprays",
+    "save_training_result",
+    "list_training_results",
+    "get_training_trials",
+    "delete_training_result",
+    "detect_cs2_sensitivity",
+    "read_cs2_sensitivity",
 ];
 
 fn main() {

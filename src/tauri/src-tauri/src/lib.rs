@@ -6,6 +6,7 @@ mod identity;
 mod orchestrator;
 mod sidecar;
 mod stats;
+mod training;
 
 use analysis::AnalysisQueue;
 use database::{repo, resolve_data_root, Database};
@@ -134,6 +135,12 @@ pub fn run() {
             identity::commands::rebuild_head_to_head,
             aim::commands::get_aim_stats,
             aim::commands::get_sprays,
+            training::commands::save_training_result,
+            training::commands::list_training_results,
+            training::commands::get_training_trials,
+            training::commands::delete_training_result,
+            training::commands::detect_cs2_sensitivity,
+            training::commands::read_cs2_sensitivity,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

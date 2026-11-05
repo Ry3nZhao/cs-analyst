@@ -106,6 +106,7 @@ const { status, logs, logOpen, refreshStatus, listenBackgroundWork } = useAppSta
 
 const titles: Record<string, string> = {
   '/matches': '对局',
+  '/training': '训练',
   '/accounts': '账户管理',
   '/settings': '系统设置',
 };
@@ -133,6 +134,11 @@ const nav = [
           h('line', { x1: 12, y1: 15, x2: 12, y2: 3 }),
         ]),
     }),
+  },
+  {
+    to: '/training',
+    label: '训练',
+    icon: navIcon('M12 2v4M12 18v4M2 12h4M18 12h4M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z'),
   },
   {
     to: '/accounts',
