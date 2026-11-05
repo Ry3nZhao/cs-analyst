@@ -106,6 +106,7 @@ const { status, logs, logOpen, refreshStatus, listenBackgroundWork } = useAppSta
 
 const titles: Record<string, string> = {
   '/matches': '对局',
+  '/players': '选手',
   '/accounts': '账户管理',
   '/settings': '系统设置',
 };
@@ -131,6 +132,17 @@ const nav = [
           h('path', { d: 'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4' }),
           h('polyline', { points: '7 10 12 15 17 10' }),
           h('line', { x1: 12, y1: 15, x2: 12, y2: 3 }),
+        ]),
+    }),
+  },
+  {
+    to: '/players',
+    label: '选手',
+    icon: defineComponent({
+      render: () =>
+        h('svg', { width: 15, height: 15, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': 1.8, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, [
+          h('circle', { cx: 12, cy: 8, r: 4 }),
+          h('path', { d: 'M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1' }),
         ]),
     }),
   },
