@@ -39,6 +39,8 @@ permissions = [
   "allow-split-identity",
   "allow-update-person",
   "allow-rebuild-head-to-head",
+  "allow-get-aim-stats",
+  "allow-get-sprays",
   "allow-import-demos",
   "allow-refresh-match-metadata",
   "allow-force-download-now",

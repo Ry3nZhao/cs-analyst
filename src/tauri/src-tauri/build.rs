@@ -41,6 +41,8 @@ const COMMANDS: &[&str] = &[
     "split_identity",
     "update_person",
     "rebuild_head_to_head",
+    "get_aim_stats",
+    "get_sprays",
 ];
 
 fn main() {

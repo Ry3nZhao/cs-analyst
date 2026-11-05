@@ -1,0 +1,10 @@
+[package]
+name = "aim"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "Aim analysis: time to damage, crosshair placement, reaction, counter-strafing, accuracy and spray control"
+
+[dependencies]
+demo-parse = { path = "../demo-parse" }
+serde = { version = "1", features = ["derive"] }
