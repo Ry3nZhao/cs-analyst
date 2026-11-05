@@ -108,6 +108,7 @@ const titles: Record<string, string> = {
   '/matches': '对局',
   '/players': '选手',
   '/aim': '枪法与压枪',
+  '/training': '训练',
   '/accounts': '账户管理',
   '/settings': '系统设置',
 };
@@ -158,6 +159,11 @@ const nav = [
           h('circle', { cx: 12, cy: 12, r: 1 }),
         ]),
     }),
+  },
+  {
+    to: '/training',
+    label: '训练',
+    icon: navIcon('M12 2v4M12 18v4M2 12h4M18 12h4M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z'),
   },
   {
     to: '/accounts',

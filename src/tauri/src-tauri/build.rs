@@ -48,6 +48,12 @@ const COMMANDS: &[&str] = &[
     "restart_downloader",
     "get_downloader_logs",
     "get_replay", "get_heatmap_points", "get_radar", "get_radar_image", "get_radar_settings", "update_radar_settings",
+    "save_training_result",
+    "list_training_results",
+    "get_training_trials",
+    "delete_training_result",
+    "detect_cs2_sensitivity",
+    "read_cs2_sensitivity",
 ];
 
 fn main() {

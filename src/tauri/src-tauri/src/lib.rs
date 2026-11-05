@@ -7,6 +7,7 @@ mod orchestrator;
 mod replay;
 mod sidecar;
 mod stats;
+mod training;
 
 use analysis::AnalysisQueue;
 use database::{repo, resolve_data_root, Database};
@@ -148,6 +149,12 @@ pub fn run() {
             sidecar::commands::restart_downloader,
             sidecar::commands::get_downloader_logs,
             replay::commands::get_replay, replay::commands::get_heatmap_points, replay::commands::get_radar, replay::commands::get_radar_image, replay::commands::get_radar_settings, replay::commands::update_radar_settings,
+            training::commands::save_training_result,
+            training::commands::list_training_results,
+            training::commands::get_training_trials,
+            training::commands::delete_training_result,
+            training::commands::detect_cs2_sensitivity,
+            training::commands::read_cs2_sensitivity,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
