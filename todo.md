@@ -8,6 +8,14 @@
 - [x] P0 地基：workspace、迁移事务化、只发布 Windows、文档更新
 - [x] P1 解析内核：vendor demoparser、`demo-parse`、解析队列、事件入库、回放文件、样例 demo 回归测试
 - [x] 修复本地前端构建：node_modules 链接损坏，用 `pnpm install --frozen-lockfile --force` 重建即可
+- [x] **第一波（W1-A～D）已合并到 `dev/analysis`（2026-11-05）**：
+  - 全部 56 个 Rust 测试通过，`nuxt generate` 通过。
+  - 真实应用里，迁移从 2 一路升到 5，三个回填任务跑完。
+  - `get_match_detail` / `search_persons` / `get_head_to_head` / `get_aim_stats` 都用真实数据核对过，新主题页面也检查过。
+
+**合并时发现、第二波要注意的点**：
+- ESL 服务器的 demo 没有 `player_blind` 事件，可见性数据也不可靠，所以职业比赛没有 TTD 和准星位置数据。页面上要显示「不可用」，不能显示成 0。
+- 启动时 stats、identity、aim 各有一个回填任务。aim 会重新解析 demo（每场约 2 秒），库大时首次启动会比较慢。之后可以考虑把它并入解析队列统一调度，并在界面上显示进度。
 
 ---
 
@@ -41,7 +49,7 @@
 
 ---
 
-## 第一波（可以同时开始）
+## 第一波 ✅ 已合并
 
 ### W1-A UI 主题重做（只动前端）
 
@@ -142,7 +150,7 @@
 
 ---
 
-## 第二波（等第一波合并后再开始）
+## 第二波（第一波已合并，可以开始）
 
 | 任务 | 依赖 | 内容 |
 |---|---|---|
