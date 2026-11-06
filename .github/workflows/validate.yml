@@ -65,6 +65,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # 前端运行时会 import @cs-analyst/shared-types（入口是 dist/），要先构建
+      - name: Build shared-types
+        run: pnpm --filter @cs-analyst/shared-types build
+
       - name: Generate frontend
         run: pnpm --filter @cs-analyst/desktop generate
 
