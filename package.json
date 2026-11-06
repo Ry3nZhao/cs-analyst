@@ -1,7 +1,7 @@
 {
   "name": "cs-analyst",
   "private": true,
-  "version": "0.1.2",
+  "version": "1.0.0",
   "scripts": {
     "dev": "node ./scripts/dev.mjs",
     "validate": "node ./scripts/validate/index.mjs",

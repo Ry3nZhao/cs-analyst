@@ -1,15 +1,22 @@
-# CS Analyst Release
+# CS Analyst 1.0.0
 
-Official release for this version.
+纯本地的 CS2 demo 分析工具：解析、统计都在本机完成，不上传任何数据。
 
-Key features:
-- Multi-user and multi-subaccount management across 5EPlay, Renown, and Valve
-- Continuous demo discovery and download with scheduled background polling
-- Cross-source deduplication to avoid repeated downloads
-- Visual download queue with pause, cancel, and manual retry controls
-- Configurable local data directory for database, demos, and runtime state
+## 主要功能
 
-Assets in this release:
-- Windows installer (`.exe`)
-- macOS disk image (`.dmg`)
-- Linux packages (`.AppImage`, `.deb`, `.rpm`)
+- **Demo 获取与管理**：自动发现 5E、Renown 和 Valve（Auth Code）的对局并下载；支持手动导入和监视 CS2 录像目录；多账户、多子账户；存储占用统计与清理、数据库备份。
+- **Rust 解析内核**：下载或导入后自动解析，失败自动重试；回合、击杀、伤害、经济、道具、开枪逐 tick 入库。
+- **比赛详情**：计分板（ADR、KAST、HLTV 2.0、Swing）、回合时间线、回合胜率曲线、对枪 / 补枪 / 残局。
+- **Swing**：基于回合胜率模型，衡量每个事件让本队胜率变化了多少，并分摊到每名选手。
+- **枪法与压枪**：首发命中、TTD、准星位置、急停率；逐枪弹道与压枪误差分析。
+- **2D 回放**：按 tick 回放全场走位、开枪、道具和击杀。
+- **全库身份**：同一选手在不同平台的账户自动归并，跨对局统计和对位。
+- **个人主页**：关键指标及其在全库中的百分位、重点改进项、趋势。
+- **高光 / 失误集锦**：自动挑出多杀、残局、失误片段，可以跳到 CS2 对应 tick 观看。
+- **内置瞄准训练**：基于你的弱项生成训练项目，并记录成绩。
+
+## 下载
+
+- Windows 安装包（`.exe`，NSIS，x64）
+
+目前只提供 Windows 版本。

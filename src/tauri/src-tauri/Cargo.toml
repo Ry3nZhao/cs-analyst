@@ -1,6 +1,6 @@
 [package]
 name = "cs-analyst"
-version = "0.1.1"
+version = "1.0.0"
 description = "CS Analyst"
 authors = ["Ryen"]
 edition = "2021"
