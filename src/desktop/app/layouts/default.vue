@@ -5,10 +5,14 @@
       <!-- Logo -->
       <div class="logo">
         <div class="logo-icon">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <circle cx="12" cy="12" r="3"/>
-            <path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
-            <path d="M4.93 4.93l2.12 2.12M16.95 16.95l2.12 2.12M4.93 19.07l2.12-2.12M16.95 7.05l2.12-2.12"/>
+          <!-- Same mark as the app icon (src/tauri/src-tauri/icons/source/icon.svg) -->
+          <svg width="22" height="22" viewBox="130 130 764 764" fill="none">
+            <g stroke="#f2f2f2" stroke-width="60" stroke-linecap="round">
+              <path d="M 559.6 214.3 A 302 302 0 0 1 809.7 464.4 M 809.7 559.6 A 302 302 0 0 1 559.6 809.7 M 464.4 809.7 A 302 302 0 0 1 214.3 559.6 M 214.3 464.4 A 302 302 0 0 1 464.4 214.3"/>
+              <path d="M 512 150 V 270 M 512 754 V 874 M 150 512 H 270 M 754 512 H 874"/>
+            </g>
+            <polyline points="352,622 452,530 548,590 664,424" stroke="#8e8e93" stroke-width="56" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="664" cy="424" r="60" fill="var(--accent)"/>
           </svg>
         </div>
         <div class="logo-text">
@@ -254,9 +258,9 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--radius-md);
-  background: var(--gray-0);
-  color: var(--text-inverse);
+  border-radius: 7px;
+  background: linear-gradient(#1c1c1e, #0b0b0c);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08);
 }
 .logo-text { display: flex; flex-direction: column; line-height: 1.2; }
 .logo-title { font-size: var(--text-md); font-weight: 600; color: var(--text); }

@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1c1c1e"/>
+      <stop offset="1" stop-color="#0b0b0c"/>
+    </linearGradient>
+  </defs>
+  <rect x="48" y="48" width="928" height="928" rx="216" fill="url(#bg)"/>
+  <rect x="49.5" y="49.5" width="925" height="925" rx="214.5" fill="none" stroke="#ffffff" stroke-opacity="0.08" stroke-width="3"/>
+  <!-- reticle: ring split into four arcs, ticks at the gaps -->
+  <g fill="none" stroke="#f2f2f2" stroke-width="52" stroke-linecap="round">
+    <path d="M 559.6 214.3 A 302 302 0 0 1 809.7 464.4"/>
+    <path d="M 809.7 559.6 A 302 302 0 0 1 559.6 809.7"/>
+    <path d="M 464.4 809.7 A 302 302 0 0 1 214.3 559.6"/>
+    <path d="M 214.3 464.4 A 302 302 0 0 1 464.4 214.3"/>
+    <path d="M 512 150 V 270 M 512 754 V 874 M 150 512 H 270 M 754 512 H 874" stroke-width="44"/>
+  </g>
+  <!-- rising trend through the sight -->
+  <polyline points="352,622 452,530 548,590 664,424" fill="none" stroke="#8e8e93" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="664" cy="424" r="50" fill="#3ccfdc"/>
+</svg>
