@@ -7,7 +7,7 @@ use rusqlite::params;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-const ME: u64 = 76561198000000042;
+const ME: u64 = demo_parse::sample::PLAYER;
 
 const SAMPLES: &[(&str, &str, &str)] = &[
     ("valve", "Official/match730_003831848039841005782_0410013497_154_competitive.dem", "2026-07-08 10:00:00"),
@@ -16,7 +16,7 @@ const SAMPLES: &[(&str, &str, &str)] = &[
 ];
 
 fn sample_root() -> PathBuf {
-    PathBuf::from(std::env::var("CS_ANALYST_SAMPLE_DEMOS").unwrap_or_else(|_| "<sample-dir>".into()))
+    PathBuf::from(std::env::var("CS_ANALYST_SAMPLE_DEMOS").unwrap_or_default())
 }
 
 /// Ingest the samples like the analysis worker does: events → stats → identities → aim.

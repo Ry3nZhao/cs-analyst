@@ -27,7 +27,7 @@ runCargo(['check', '--workspace', '--timings'], {
   },
 });
 
-// 单元测试 + schema 测试；本机设置了 CS_ANALYST_SAMPLE_DEMOS（或默认 <sample-dir> 存在）时还会跑样例 demo 回归
+// 单元测试 + schema 测试；本机设置了 CS_ANALYST_SAMPLE_DEMOS / CS_ANALYST_SAMPLE_STEAMID（见 docs/development.md）时还会跑样例 demo 回归
 runCargo(['test', '--workspace'], {
   cwd: tauriDir,
   label: 'Validate: cargo test',

@@ -471,7 +471,7 @@ mod tests {
 
     #[test]
     fn string_that_looks_like_protobuf_does_not_fail() {
-        // "Rien" → 'R' = 字段 10 / bytes，'e' = fixed32 越界；旧实现在这里会抛错
+        // "Rien" → 'R' = 字段 10 / bytes，'i' 当长度时越界；旧实现在这里会抛错
         let gi = fb(10, &[fv(1, 76561198000000042), fb(2, b"Rien")].concat());
         let fields = parse_message(&gi).unwrap();
         let json = fields_to_json(&fields);

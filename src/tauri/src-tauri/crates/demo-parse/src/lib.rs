@@ -13,6 +13,7 @@ pub mod engagement;
 pub mod header;
 pub mod model;
 pub mod replay;
+pub mod sample;
 pub mod source;
 
 pub use header::{read_demo_file_meta, DemoFileMeta};

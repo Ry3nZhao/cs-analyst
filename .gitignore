@@ -35,3 +35,10 @@ pnpm-debug.log*
 # OS
 .DS_Store
 Thumbs.db
+
+# 本机样例配置（样例目录、主玩家 steamid），不进仓库
+src/tauri/src-tauri/.cargo/config.toml
+
+# Claude Code 本机文件（子会话 worktree、本机权限设置）
+.claude/worktrees/
+.claude/settings.local.json

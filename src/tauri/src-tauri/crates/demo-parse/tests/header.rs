@@ -5,7 +5,7 @@ use demo_parse::read_demo_file_meta;
 use std::path::PathBuf;
 
 fn sample(rel: &str) -> Option<PathBuf> {
-    let root = std::env::var("CS_ANALYST_SAMPLE_DEMOS").unwrap_or_else(|_| "<sample-dir>".into());
+    let root = std::env::var("CS_ANALYST_SAMPLE_DEMOS").unwrap_or_default();
     let p = PathBuf::from(root).join(rel);
     if p.exists() {
         Some(p)

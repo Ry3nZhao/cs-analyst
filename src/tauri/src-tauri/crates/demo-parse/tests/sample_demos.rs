@@ -1,5 +1,5 @@
 //! Regression tests against real demos. Set `CS_ANALYST_SAMPLE_DEMOS` to the sample root
-//! (default `<sample-dir>`); tests are skipped when a file is missing.
+//! (`CS_ANALYST_SAMPLE_DEMOS`, see `demo_parse::sample`); tests are skipped when a file is missing.
 //!
 //! Run with: `cargo test -p demo-parse --release -- --nocapture`
 
@@ -7,7 +7,7 @@ use demo_parse::{parse_demo_file, ParsedDemo, TEAM_CT, TEAM_T};
 use std::path::PathBuf;
 
 fn sample(rel: &str) -> Option<PathBuf> {
-    let root = std::env::var("CS_ANALYST_SAMPLE_DEMOS").unwrap_or_else(|_| "<sample-dir>".into());
+    let root = std::env::var("CS_ANALYST_SAMPLE_DEMOS").unwrap_or_default();
     let p = PathBuf::from(root).join(rel);
     if p.exists() {
         Some(p)

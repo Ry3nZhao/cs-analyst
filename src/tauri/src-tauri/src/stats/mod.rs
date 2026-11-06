@@ -63,7 +63,7 @@ mod tests {
     /// Ingest a real demo, then check: stored rows, DB reload gives identical stats, the two commands.
     #[test]
     fn ingest_recompute_and_commands() {
-        let root = std::env::var("CS_ANALYST_SAMPLE_DEMOS").unwrap_or_else(|_| "<sample-dir>".into());
+        let root = std::env::var("CS_ANALYST_SAMPLE_DEMOS").unwrap_or_default();
         let path = PathBuf::from(root).join("Platforms/g161-n-20260709134236148390830.dem");
         if !path.exists() {
             eprintln!("skip: {} not found", path.display());
@@ -98,10 +98,10 @@ mod tests {
         assert_eq!(serde_json::to_string(&from_demo.team_rounds).unwrap(), serde_json::to_string(&from_db.team_rounds).unwrap());
 
         // list_player_stats: stored row round-trips (all columns) and the summary matches.
-        let list = commands::list_player_stats_impl(&db, 76561198000000042, &Default::default()).unwrap();
+        let list = commands::list_player_stats_impl(&db, demo_parse::sample::PLAYER, &Default::default()).unwrap();
         assert_eq!(list.total, 1);
         let row = &list.matches[0];
-        let mine = from_demo.players.iter().find(|p| p.steamid == 76561198000000042).unwrap();
+        let mine = from_demo.players.iter().find(|p| p.steamid == demo_parse::sample::PLAYER).unwrap();
         let mut expect = mine.clone();
         expect.multi_kills[0] = 0;
         expect.multi_kills[1] = 0;
@@ -110,7 +110,7 @@ mod tests {
         assert_eq!(list.summary.as_ref().unwrap().kills, 15);
         let none = commands::list_player_stats_impl(
             &db,
-            76561198000000042,
+            demo_parse::sample::PLAYER,
             &commands::PlayerStatsFilters { map_name: Some("de_inferno".into()), ..Default::default() },
         )
         .unwrap();
@@ -135,7 +135,7 @@ mod tests {
         assert!(j["playerRounds"][0]["swing"].is_number());
         let stored: f64 = db
             .conn
-            .query_row("SELECT swing FROM player_match_stats WHERE match_id='m1' AND steamid=?", params![76561198000000042i64], |r| r.get(0))
+            .query_row("SELECT swing FROM player_match_stats WHERE match_id='m1' AND steamid=?", params![demo_parse::sample::PLAYER as i64], |r| r.get(0))
             .unwrap();
         assert!((stored as f32 - mine.derived.swing).abs() < 1e-4);
         let curve_rows = count("round_win_probability");

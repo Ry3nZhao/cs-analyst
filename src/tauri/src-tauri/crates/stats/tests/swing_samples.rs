@@ -7,7 +7,7 @@ mod common;
 use common::*;
 use stats::{MatchStats, PlayerMatchStats, TEAM_CT, TEAM_T};
 
-const ME: u64 = 76561198000000042;
+const ME: u64 = demo_parse::sample::PLAYER;
 
 fn load(rel: &str) -> Option<MatchStats> {
     let path = sample(rel)?;

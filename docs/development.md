@@ -105,7 +105,18 @@ cargo test --workspace
 cargo run -p demo-parse --release --example summary -- "<path>.dem"
 ```
 
-样例目录由 `CS_ANALYST_SAMPLE_DEMOS` 指定，默认 `<sample-dir>`（含 `Official/`、`Platforms/`、`Profs/` 三类来源）。目录不存在时相关测试自动跳过。
+样例回归需要两个环境变量，没有设置时相关测试自动跳过（CI 上就是这样）：
+
+- `CS_ANALYST_SAMPLE_DEMOS`：样例目录，含 `Official/`、`Platforms/`、`Profs/` 三类来源
+- `CS_ANALYST_SAMPLE_STEAMID`：样例里固定数字所对应的主玩家 steamid
+
+本机路径和 steamid 不进仓库：写在 `src/tauri/src-tauri/.cargo/config.toml`（已 gitignore）里，`cargo test` 会自动带上：
+
+```toml
+[env]
+CS_ANALYST_SAMPLE_DEMOS = "<样例目录>"
+CS_ANALYST_SAMPLE_STEAMID = "<主玩家 steamid>"
+```
 
 修改解析结果的含义时，提升 `demo_parse::PARSER_VERSION`：启动后已解析的对局会自动重新解析。
 

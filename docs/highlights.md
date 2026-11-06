@@ -79,7 +79,7 @@ player_round_stats、round_win_probability、aim_engagements）。改任何规�
 | 近距离扫空 | 0 | 5 | 0 |
 | 大幅负 Swing | 16 | 6 | 6 |
 
-另外固定了主玩家 76561198000000042 的事件：官匹第 12 回合首死被 AWP 打死且没被补（输掉回合，55 分）、第 14 回合死亡让本方胜率 53.1% → 24.3%（−28.9）；平台第 6 回合 M4A1-S 3K、同回合一次穿烟击杀。多杀、残局条数与 `player_match_stats` 的 3K+4K+5K、残局胜场一致。拆包、无镜狙、跳杀等样例里没有出现的规则用 `crates/highlights/src/tests.rs` 的合成数据覆盖。
+另外固定了主玩家（`CS_ANALYST_SAMPLE_STEAMID`）的事件：官匹第 12 回合首死被 AWP 打死且没被补（输掉回合，55 分）、第 14 回合死亡让本方胜率 53.1% → 24.3%（−28.9）；平台第 6 回合 M4A1-S 3K、同回合一次穿烟击杀。多杀、残局条数与 `player_match_stats` 的 3K+4K+5K、残局胜场一致。拆包、无镜狙、跳杀等样例里没有出现的规则用 `crates/highlights/src/tests.rs` 的合成数据覆盖。
 
 ## 表（迁移 010）
 

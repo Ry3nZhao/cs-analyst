@@ -5,10 +5,10 @@ use crate::database::Database;
 use parking_lot::Mutex;
 use std::path::PathBuf;
 
-const ME: &str = "76561198000000042";
+const ME: &str = demo_parse::sample::PLAYER_STR;
 
 fn sample(rel: &str) -> Option<PathBuf> {
-    let root = std::env::var("CS_ANALYST_SAMPLE_DEMOS").unwrap_or_else(|_| "<sample-dir>".into());
+    let root = std::env::var("CS_ANALYST_SAMPLE_DEMOS").unwrap_or_default();
     let p = PathBuf::from(root).join(rel);
     p.exists().then_some(p)
 }
@@ -59,7 +59,7 @@ fn replay_and_heatmap_on_sample() {
     let last = &header["rounds"][14];
     assert!(last["scoreT"].is_u64() && last["scoreCt"].is_u64(), "score from team_round_stats");
     let players = header["players"].as_array().unwrap();
-    assert!(players.iter().any(|p| p["steamid"] == ME && p["name"] == "PlayerOne"));
+    assert!(players.iter().any(|p| p["steamid"] == ME && p["name"].as_str().is_some_and(|n| !n.is_empty())));
     let cols = &header["columns"];
     assert_eq!(cols["bodyLen"].as_u64().unwrap() as usize, body.len());
     // Spot-check a value in every column against the decoded file.
@@ -99,7 +99,7 @@ fn replay_and_heatmap_on_sample() {
     let my_kills = q(me(&["kill"]));
     let my_deaths = q(me(&["death"]));
     eprintln!("me: {} kills, {} deaths", my_kills.kind.len(), my_deaths.kind.len());
-    assert_eq!(my_kills.kind.len(), 15, "PlayerOne kills (no suicides / team kills)");
+    assert_eq!(my_kills.kind.len(), 15, "main player kills (no suicides / team kills)");
     assert_eq!(my_deaths.kind.len(), 6);
     assert_eq!(kills, 98, "all non-suicide, non-team kills in the match");
     // Side filter partitions.

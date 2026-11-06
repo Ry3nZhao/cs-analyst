@@ -8,7 +8,7 @@
 set windows-shell := ["powershell.exe", "-NoProfile", "-Command"]
 
 # 已安装应用的本地数据目录（Tauri identifier: com.cs-analyst.app）
-app-data := "C:/Users/<user>/AppData/Local/com.cs-analyst.app"
+app-data := env_var("LOCALAPPDATA") / "com.cs-analyst.app"
 
 root := justfile_directory()
 tauri-app := root / "src/tauri"

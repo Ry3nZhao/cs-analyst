@@ -90,10 +90,10 @@ mod tests {
     use rusqlite::params;
     use std::path::PathBuf;
 
-    const ME: &str = "76561198000000042";
+    const ME: &str = demo_parse::sample::PLAYER_STR;
 
     fn sample(rel: &str) -> Option<PathBuf> {
-        let root = std::env::var("CS_ANALYST_SAMPLE_DEMOS").unwrap_or_else(|_| "<sample-dir>".into());
+        let root = std::env::var("CS_ANALYST_SAMPLE_DEMOS").unwrap_or_default();
         let p = PathBuf::from(root).join(rel);
         p.exists().then_some(p)
     }

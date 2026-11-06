@@ -281,7 +281,7 @@ mod tests {
     /// Full ingest of a real demo (skipped if the sample folder is missing).
     #[test]
     fn ingest_sample_demo() {
-        let root = std::env::var("CS_ANALYST_SAMPLE_DEMOS").unwrap_or_else(|_| "<sample-dir>".into());
+        let root = std::env::var("CS_ANALYST_SAMPLE_DEMOS").unwrap_or_default();
         let path = PathBuf::from(root).join("Platforms/g161-n-20260709134236148390830.dem");
         if !path.exists() {
             eprintln!("skip: {} not found", path.display());
@@ -311,9 +311,9 @@ mod tests {
         // Steam64 round-trips through INTEGER.
         let k: i64 = db
             .conn
-            .query_row("SELECT COUNT(*) FROM kills WHERE match_id='m1' AND attacker = ?1 AND victim <> ?1", [76561198000000042i64], |r| r.get(0))
+            .query_row("SELECT COUNT(*) FROM kills WHERE match_id='m1' AND attacker = ?1 AND victim <> ?1", [demo_parse::sample::PLAYER as i64], |r| r.get(0))
             .unwrap();
-        assert_eq!(k, 15, "PlayerOne kills in this demo (suicides excluded)");
+        assert_eq!(k, 15, "main player kills in this demo (suicides excluded)");
 
         // Deleting the match cascades.
         db.conn.execute("DELETE FROM matches WHERE id='m1'", []).unwrap();

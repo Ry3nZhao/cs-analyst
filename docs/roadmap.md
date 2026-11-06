@@ -312,7 +312,7 @@ P3 到 P8 只部分依赖 P2，可以按兴趣调整顺序。adapter 迁移可�
 
 ## 6. 验证结果（2026-11-05）
 
-用 demoparser2（上游 main 分支）写了一个探针程序，跑了本地 `<sample-dir>` 下三个来源的 demo：Official（Valve 官匹）、Platforms（`g161-n-*`）、Profs（2026 Major，ESL 服务器）。
+用 demoparser2（上游 main 分支）写了一个探针程序，跑了本地样例目录下三个来源的 demo：Official（Valve 官匹）、Platforms（`g161-n-*`）、Profs（2026 Major，ESL 服务器）。
 
 ### 6.1 解析能力：✅ 满足 P2 / P4 / P6 的需要
 
@@ -337,7 +337,7 @@ P3 到 P8 只部分依赖 P2，可以按兴趣调整顺序。adapter 迁移可�
 
 三个来源的 10 名玩家都有合法的 Steam64，击杀事件里也带 `attacker_steamid`。
 
-实际例子：76561198000000042 在官匹里叫 `PlayerAlt`，在平台 demo 里叫 `PlayerOne`，按 steamid 会自动归为同一个人。P3 的自动关联可以成立；平台账号（5E UID 等）和 steamid 的对应关系由各平台 adapter 提供。
+实际例子：样例里的主玩家在官匹和平台 demo 里用的是两个不同的名字，按 steamid 会自动归为同一个人。P3 的自动关联可以成立；平台账号（5E UID 等）和 steamid 的对应关系由各平台 adapter 提供。
 
 ### 6.3 CS2 `-netconport`：⚠️ 需要在本机实测
 

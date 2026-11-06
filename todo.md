@@ -38,7 +38,7 @@
 4. **前后端共享的类型放在各自的文件里**，例如 `src/shared-types/src/stats.ts`，`index.ts` 只加一行 `export * from './stats'`。
 5. **测试**：
    - Rust 侧：`cargo test --workspace`（在 `src/tauri/src-tauri` 下运行）。
-   - 样例 demo 在 `<sample-dir>`，新指标都要加样例回归测试，并固定关键数字。
+   - 样例 demo 目录和主玩家见 docs/development.md（本机配置，不进仓库），新指标都要加样例回归测试，并固定关键数字。
    - 前端侧：`pnpm --filter @cs-analyst/desktop generate` 必须通过。
 6. **数据口径**：
    - 自杀（attacker = victim，weapon = `world`）和队友伤害不算进正常统计。
@@ -126,7 +126,7 @@
   - 物化表 `h2h_stats`，按 person × person 统计：同队场次和胜率、对手场次和胜率、互杀数、互相造成的伤害、对枪胜率（每回合两人第一次交火的结果）、开局对枪战绩。
   - 每场解析完后增量更新。
 - [ ] 命令：`search_persons`、`get_person`、`get_head_to_head(a, b)`、`merge_persons`、`split_identity`、`list_teammates(person)`（常一起组排的队友及组排胜率）。
-- [ ] 测试：用样例数据检查你的 steamid 76561198000000042 在官匹和平台 demo 里能自动归为同一个人；合并和拆分可以来回操作且数据不丢。
+- [ ] 测试：用样例数据检查主玩家在官匹和平台 demo 里能自动归为同一个人；合并和拆分可以来回操作且数据不丢。
 
 ### W1-D 枪法与压枪（Rust，P4 的后端部分）
 

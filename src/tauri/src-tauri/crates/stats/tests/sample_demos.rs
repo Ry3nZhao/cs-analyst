@@ -1,5 +1,5 @@
 //! Regression tests on the three sample demos (skipped when the sample folder is missing).
-//! Set `CS_ANALYST_SAMPLE_DEMOS` to override `<sample-dir>`.
+//! Sample folder and main player come from `CS_ANALYST_SAMPLE_DEMOS` / `CS_ANALYST_SAMPLE_STEAMID` (see `demo_parse::sample`).
 //!
 //! Besides fixed numbers, every player is cross-checked against the in-game scoreboard stored in
 //! the demo (`CCSPlayerController_ActionTrackingServices`, read at the last tick).
@@ -11,7 +11,7 @@ use common::*;
 use demo_parse::ParsedDemo;
 use stats::{BuyType, MatchStats, PlayerMatchStats, Team, TEAM_CT, TEAM_T};
 
-const ME: u64 = 76561198000000042;
+const ME: u64 = demo_parse::sample::PLAYER;
 
 fn load(rel: &str) -> Option<(std::path::PathBuf, ParsedDemo, MatchStats)> {
     let path = sample(rel)?;

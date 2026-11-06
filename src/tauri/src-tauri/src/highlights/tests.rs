@@ -1,6 +1,6 @@
 //! 集锦的样例回归测试和播放相关的单元测试。
 //!
-//! 样例 demo 在 `<sample-dir>`（`CS_ANALYST_SAMPLE_DEMOS` 可覆盖），缺文件时跳过。
+//! 样例 demo 目录和主玩家见 `demo_parse::sample`（环境变量 `CS_ANALYST_SAMPLE_DEMOS` / `CS_ANALYST_SAMPLE_STEAMID`），缺文件时跳过。
 //! 测试只用复制到临时目录里的副本，不碰原文件。
 
 use super::*;
@@ -9,14 +9,14 @@ use rusqlite::params;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
-const ME: u64 = 76561198000000042;
+const ME: u64 = demo_parse::sample::PLAYER;
 
 const OFFICIAL: &str = "Official/match730_003831848039841005782_0410013497_154_competitive.dem";
 const PLATFORM: &str = "Platforms/g161-n-20260709134236148390830.dem";
 const PRO: &str = "Profs/2026major/stage1/nrg-vs-big-m1-dust2-p1.dem";
 
 fn sample(rel: &str) -> Option<PathBuf> {
-    let root = std::env::var("CS_ANALYST_SAMPLE_DEMOS").unwrap_or_else(|_| "<sample-dir>".into());
+    let root = std::env::var("CS_ANALYST_SAMPLE_DEMOS").unwrap_or_default();
     let p = PathBuf::from(root).join(rel);
     if p.exists() {
         Some(p)

@@ -3,7 +3,7 @@ use crate::database::analysis::replace_match_analysis;
 use std::path::PathBuf;
 use std::sync::OnceLock;
 
-const ME: i64 = 76561198000000042;
+const ME: i64 = demo_parse::sample::PLAYER as i64;
 
 fn temp_db() -> (Database, PathBuf) {
     let dir = std::env::temp_dir().join(format!("cs-analyst-identity-test-{}-{}", std::process::id(), uuid::Uuid::new_v4()));
@@ -230,7 +230,7 @@ fn sub_accounts_become_followed_person() {
 // ---------------------------------------------------------------------------------------------
 
 fn sample_root() -> PathBuf {
-    PathBuf::from(std::env::var("CS_ANALYST_SAMPLE_DEMOS").unwrap_or_else(|_| "<sample-dir>".into()))
+    PathBuf::from(std::env::var("CS_ANALYST_SAMPLE_DEMOS").unwrap_or_default())
 }
 
 /// (官匹 demo, 平台 demo)，都包含 ME。只解析一次。
@@ -264,13 +264,19 @@ fn samples() -> Option<&'static (demo_parse::ParsedDemo, demo_parse::ParsedDemo)
         .as_ref()
 }
 
+/// 主玩家在某个 demo 里的名字（不在仓库里写死）。
+fn name_in(d: &demo_parse::ParsedDemo) -> &str {
+    &d.players.iter().find(|p| p.steamid as i64 == ME).expect("main player in sample").name
+}
+
 fn ingest_samples(db: &Database, with_hook: bool) {
     let (official, platform) = samples().unwrap();
     db.conn.execute("INSERT INTO users (id, display_name) VALUES ('u1', 'me')", []).unwrap();
+    // 5E 子账号只有平台内 id 和名字；名字取自平台 demo，靠场次交集 + 名字推断 steamid
     db.conn
         .execute(
-            "INSERT INTO sub_accounts (id, user_id, platform, external_id, display_name) VALUES ('sa5e', 'u1', '5eplay', 'uuid-me', 'PlayerOne')",
-            [],
+            "INSERT INTO sub_accounts (id, user_id, platform, external_id, display_name) VALUES ('sa5e', 'u1', '5eplay', 'uuid-me', ?)",
+            params![name_in(platform)],
         )
         .unwrap();
     insert_match(db, "off", "valve", "2026-07-01T00:00:00Z", None);
@@ -297,8 +303,11 @@ fn sample_same_person_across_platforms() {
     let p = person_of(c, ME);
     let d = query::get_person(c, p).unwrap();
     let names: Vec<&str> = d.aliases.iter().map(|a| a.name.as_str()).collect();
-    assert!(names.contains(&"PlayerAlt"), "{names:?}");
-    assert!(names.contains(&"PlayerOne"), "{names:?}");
+    let (official, platform) = samples().unwrap();
+    let (official_name, platform_name) = (name_in(official), name_in(platform));
+    assert_ne!(official_name, platform_name, "samples should use two different names");
+    assert!(names.contains(&official_name), "{names:?}");
+    assert!(names.contains(&platform_name), "{names:?}");
     assert_eq!(d.person.steamids, vec![ME.to_string()]);
     assert_eq!(d.person.match_count, 2);
     assert_eq!(d.record.matches, 2);
@@ -308,7 +317,8 @@ fn sample_same_person_across_platforms() {
     assert_eq!(five.steamid.as_deref(), Some(ME.to_string().as_str()));
 
     // 搜索：历史名字和 steamid 都能找到
-    for q in ["playeralt", "PlayerOne", &ME.to_string()] {
+    let partial = official_name.chars().take(6).collect::<String>().to_lowercase();
+    for q in [partial.as_str(), platform_name, &ME.to_string()] {
         let r = query::search_persons(c, Some(q), false, 10).unwrap();
         assert!(r.iter().any(|x| x.id == p), "search {q}");
     }

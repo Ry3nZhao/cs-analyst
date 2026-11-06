@@ -14,7 +14,7 @@ pub const PLATFORM: &str = "Platforms/g161-n-20260709134236148390830.dem";
 pub const PRO: &str = "Profs/2026major/stage1/nrg-vs-big-m1-dust2-p1.dem";
 
 pub fn sample(rel: &str) -> Option<PathBuf> {
-    let root = std::env::var("CS_ANALYST_SAMPLE_DEMOS").unwrap_or_else(|_| "<sample-dir>".into());
+    let root = std::env::var("CS_ANALYST_SAMPLE_DEMOS").unwrap_or_default();
     let p = PathBuf::from(root).join(rel);
     if p.exists() {
         Some(p)

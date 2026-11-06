@@ -1,5 +1,5 @@
 //! Regression tests against real demos. Set `CS_ANALYST_SAMPLE_DEMOS` to the sample root
-//! (default `<sample-dir>`); tests are skipped when a file is missing.
+//! (`CS_ANALYST_SAMPLE_DEMOS`, see `demo_parse::sample`); tests are skipped when a file is missing.
 //!
 //! Run with: `cargo test -p aim -- --nocapture`
 
@@ -7,13 +7,13 @@ use aim::{AimReport, Role, ALL_WEAPONS};
 use demo_parse::ParsedDemo;
 use std::path::PathBuf;
 
-const ME: u64 = 76561198000000042;
+const ME: u64 = demo_parse::sample::PLAYER;
 const VALVE: &str = "Official/match730_003831848039841005782_0410013497_154_competitive.dem";
 const PLATFORM: &str = "Platforms/g161-n-20260709134236148390830.dem";
 const PRO: &str = "Profs/2026major/stage1/nrg-vs-big-m3-mirage.dem";
 
 fn run(rel: &str) -> Option<(ParsedDemo, AimReport)> {
-    let root = std::env::var("CS_ANALYST_SAMPLE_DEMOS").unwrap_or_else(|_| "<sample-dir>".into());
+    let root = std::env::var("CS_ANALYST_SAMPLE_DEMOS").unwrap_or_default();
     let p = PathBuf::from(root).join(rel);
     if !p.exists() {
         eprintln!("skip: {} not found", p.display());

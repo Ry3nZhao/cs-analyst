@@ -83,7 +83,7 @@ TTD 和准星位置跨场用「各场中位数按样本数加权平均」近似�
 
 ## 校验
 
-`cargo test --lib profile -- --nocapture`：用主玩家 76561198000000042 的 3 场样例 demo（官匹 Premier 3392、两场平台 demo）入库后检查：
+`cargo test --lib profile -- --nocapture`：用主玩家（`CS_ANALYST_SAMPLE_STEAMID`）的 3 场样例 demo（官匹 Premier 3392、两场平台 demo）入库后检查：
 
 - 汇总 3 场 2 胜 1 负，36 杀 25 死，45 回合；ADR 85.82、KAST 71.1%、K/D 1.44、HLTV 1.273、Swing +0.49、首杀率 40%、残局 0/3、TTD 208 ms、准星 2.03°、急停率 50.8%、压枪误差 3.19°。
 - 其中一场平台 demo 可见性 0.63（不可靠）：TTD / 准星只来自另外两场，`matchesWithData = 2`，该场趋势点为 `null`。
